@@ -1,53 +1,75 @@
 import datetime
 import json
 import os
+import urllib.request
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
-# Ruta del archivo de datos dentro de la misma carpeta
-DIRECTORIO_ACTUAL = os.path.dirname(os.path.abspath(__file__))
-ARCHIVO_DATOS = os.path.join(DIRECTORIO_ACTUAL, "ventas_gastos_duenos.json")
+# Enlace de tu base de datos persistente en Firebase
+FIREBASE_URL = "https://caja-ventas-default-rtdb.firebaseio.com"
 
-# Lista de las 3 dueñas
 DUENOS = ["BERTHA", "KARLA", "CARLITA"]
-
 FORMATO_FECHA = "%Y-%m-%d"
 FORMATO_FECHA_HORA = "%Y-%m-%d %H:%M:%S"
 
 
+# ==========================================
+# GESTIÓN DE DATOS EN LA NUBE (PERSISTENCIA)
+# ==========================================
 def cargar_datos():
-    """Lee el archivo JSON de transacciones."""
-    if os.path.exists(ARCHIVO_DATOS):
-        try:
-            with open(ARCHIVO_DATOS, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
+    """Lee las transacciones directamente desde Firebase."""
+    try:
+        req = urllib.request.Request(f"{FIREBASE_URL}/transacciones.json")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            contenido = response.read().decode("utf-8")
+            if not contenido or contenido == "null":
+                return []
+            datos = json.loads(contenido)
+            if isinstance(datos, list):
+                return [d for d in datos if d is not None]
+            elif isinstance(datos, dict):
+                return list(datos.values())
             return []
-    return []
+    except Exception as e:
+        print(f"Error al leer de Firebase: {e}")
+        return []
 
 
 def guardar_datos(datos):
-    """Guarda las transacciones en el archivo JSON."""
-    with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
-        json.dump(datos, f, indent=4, ensure_ascii=False)
+    """Guarda las transacciones en Firebase de forma permanente."""
+    try:
+        data_json = json.dumps(datos).encode("utf-8")
+        req = urllib.request.Request(
+            f"{FIREBASE_URL}/transacciones.json",
+            data=data_json,
+            headers={"Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            pass
+    except Exception as e:
+        print(f"Error al escribir en Firebase: {e}")
 
 
+# ==========================================
+# RUTAS DEL SERVIDOR WEB
+# ==========================================
 @app.route("/")
 def inicio():
-    """Entrega la interfaz web."""
+    """Entrega la pantalla principal."""
     return render_template("index.html", duenos=DUENOS)
 
 
 @app.route("/api/datos", methods=["GET"])
 def obtener_datos():
-    """Devuelve las ventas y gastos guardados."""
+    """Devuelve todas las transacciones almacenadas en la base de datos."""
     return jsonify(cargar_datos())
 
 
 @app.route("/api/registrar", methods=["POST"])
 def registrar_operacion():
-    """Guarda una venta o gasto enviado desde la interfaz."""
+    """Registra una venta, fiado o gasto en la base de datos."""
     payload = request.json
     tipo = payload.get("tipo")
     dueno = payload.get("dueno")
@@ -92,7 +114,7 @@ def registrar_operacion():
 
 @app.route("/api/cobrar_fiado", methods=["POST"])
 def cobrar_fiado():
-    """Marca un fiado pendiente como cobrado."""
+    """Marca un fiado pendiente como cobrado en la base de datos."""
     payload = request.json
     fiado_id = int(payload.get("id"))
     datos = cargar_datos()
@@ -112,7 +134,7 @@ def cobrar_fiado():
 
 @app.route("/api/eliminar", methods=["POST"])
 def eliminar_registro():
-    """Elimina un registro individual."""
+    """Elimina un registro individual de la base de datos."""
     payload = request.json
     registro_id = int(payload.get("id"))
     datos = cargar_datos()
