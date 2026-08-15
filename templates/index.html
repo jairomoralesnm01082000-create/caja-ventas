@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Caja - BERTHA | KARLA | CARLITA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .selected-border { border: 3px solid #22c55e !important; background-color: #ecfdf5 !important; color: #15803d !important; }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-gray-800 pb-12">
+    <div class="max-w-lg mx-auto bg-white min-h-screen shadow-lg p-4">
+        <h1 class="text-xl font-bold text-center text-slate-800 mb-4">💼 Sistema de Caja</h1>
+        
+        <!-- Pestañas -->
+        <div class="flex border-b border-gray-200 text-xs sm:text-sm font-semibold mb-4 overflow-x-auto">
+            <button onclick="cambiarTab('venta')" id="tab-venta" class="px-3 py-2 border-b-2 border-green-600 text-green-600 font-bold whitespace-nowrap">Venta / Fiado</button>
+            <button onclick="cambiarTab('gasto')" id="tab-gasto" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Gasto</button>
+            <button onclick="cambiarTab('fiados')" id="tab-fiados" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Cobrar Fiados</button>
+            <button onclick="cambiarTab('reporte')" id="tab-reporte" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Reporte</button>
+            <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
+        </div>
+
+        <!-- 1. Venta / Fiado -->
+        <div id="sec-venta" class="space-y-4">
+            <label class="block font-bold text-sm">Dueña:</label>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="seleccionarDuenoV('BERTHA')" id="btn-v-BERTHA" class="p-2 border-2 rounded-lg font-bold text-sm text-center selected-border">👤 BERTHA</button>
+                <button type="button" onclick="seleccionarDuenoV('KARLA')" id="btn-v-KARLA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 KARLA</button>
+                <button type="button" onclick="seleccionarDuenoV('CARLITA')" id="btn-v-CARLITA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 CARLITA</button>
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
+                <input type="number" step="0.10" id="monto-v" placeholder="Ej: 15.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg">
+            </div>
+
+            <label class="block font-bold text-sm">Forma de Pago:</label>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="seleccionarMetodo('Yape')" id="btn-metodo-yape" class="p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border">
+                    <span class="w-6 h-6 bg-purple-700 rounded-full flex items-center justify-center text-white text-xs font-bold">Y</span>
+                    <span>Yape</span>
+                </button>
+                <button type="button" onclick="seleccionarMetodo('Fiado')" id="btn-metodo-fiado" class="p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300">
+                    <span>📝 Fiado</span>
+                </button>
+            </div>
+
+            <div id="campos-fiado" class="space-y-3 hidden">
+                <div>
+                    <label class="block font-bold text-sm mb-1">Nombre del Cliente:</label>
+                    <input type="text" id="cliente-fiado" placeholder="Nombre de la persona" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold text-sm mb-1">Descripción del Fiado:</label>
+                    <input type="text" id="desc-fiado" placeholder="¿Qué producto llevó?" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Fecha:</label>
+                <input type="date" id="fecha-v" class="w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <button onclick="guardarVenta()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition">💾 Guardar Venta / Fiado</button>
+        </div>
+
+        <!-- 2. Gasto -->
+        <div id="sec-gasto" class="space-y-4 hidden">
+            <label class="block font-bold text-sm">Dueña a descontar:</label>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="seleccionarDuenoG('BERTHA')" id="btn-g-BERTHA" class="p-2 border-2 rounded-lg font-bold text-sm text-center selected-border">👤 BERTHA</button>
+                <button type="button" onclick="seleccionarDuenoG('KARLA')" id="btn-g-KARLA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 KARLA</button>
+                <button type="button" onclick="seleccionarDuenoG('CARLITA')" id="btn-g-CARLITA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 CARLITA</button>
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Motivo del Gasto:</label>
+                <input type="text" id="motivo-g" placeholder="Ej: Compra de bolsas, pasaje" class="w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Monto Gastado (S/.):</label>
+                <input type="number" step="0.10" id="monto-g" placeholder="Ej: 10.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg">
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Fecha:</label>
+                <input type="date" id="fecha-g" class="w-full p-2 border border-gray-300 rounded-lg">
+            </div>
+
+            <button onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
+        </div>
+
+        <!-- 3. Cobro de Fiados -->
+        <div id="sec-fiados" class="space-y-4 hidden">
+            <h2 class="font-bold text-sm text-gray-700">Fiados Pendientes:</h2>
+            <div id="lista-fiados" class="space-y-2"></div>
+        </div>
+
+        <!-- 4. Reporte -->
+        <div id="sec-reporte" class="space-y-4 hidden">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-bold mb-1">Desde:</label>
+                    <input type="date" id="rep-desde" class="w-full p-2 border border-gray-300 rounded">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1">Hasta:</label>
+                    <input type="date" id="rep-hasta" class="w-full p-2 border border-gray-300 rounded">
+                </div>
+            </div>
+            <button onclick="calcularGanancias()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow hover:bg-blue-700">🔍 Calcular Ganancias</button>
+            <div id="resultado-reporte" class="bg-gray-50 p-4 rounded-lg border border-gray-200 font-mono text-sm space-y-3"></div>
+        </div>
+
+        <!-- 5. Historial -->
+        <div id="sec-historial" class="space-y-3 hidden">
+            <h2 class="font-bold text-sm text-gray-700">Historial completo:</h2>
+            <div id="lista-historial" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        let duenoV = 'BERTHA';
+        let duenoG = 'BERTHA';
+        let metodoV = 'Yape';
+
+        function setFechaHoy() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha-v').value = hoy;
+            document.getElementById('fecha-g').value = hoy;
+            document.getElementById('rep-desde').value = hoy;
+            document.getElementById('rep-hasta').value = hoy;
+        }
+        setFechaHoy();
+
+        function cambiarTab(tab) {
+            ['venta', 'gasto', 'fiados', 'reporte', 'historial'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = 'px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap';
+            });
+            document.getElementById(`sec-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).className = 'px-3 py-2 border-b-2 border-green-600 text-green-600 font-bold whitespace-nowrap';
+
+            if(tab === 'fiados') cargarFiados();
+            if(tab === 'historial') cargarHistorial();
+        }
+
+        function seleccionarDuenoV(d) {
+            duenoV = d;
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const btn = document.getElementById(`btn-v-${nom}`);
+                btn.className = (nom === d) ? 'p-2 border-2 rounded-lg font-bold text-sm text-center selected-border' : 'p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300';
+            });
+            document.getElementById('fecha-v').value = new Date().toISOString().split('T')[0];
+        }
+
+        function seleccionarDuenoG(d) {
+            duenoG = d;
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const btn = document.getElementById(`btn-g-${nom}`);
+                btn.className = (nom === d) ? 'p-2 border-2 rounded-lg font-bold text-sm text-center selected-border' : 'p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300';
+            });
+            document.getElementById('fecha-g').value = new Date().toISOString().split('T')[0];
+        }
+
+        function seleccionarMetodo(m) {
+            metodoV = m;
+            document.getElementById('btn-metodo-yape').className = (m === 'Yape') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
+            document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
+            document.getElementById('campos-fiado').classList.toggle('hidden', m !== 'Fiado');
+        }
+
+        async function guardarVenta() {
+            const monto = document.getElementById('monto-v').value;
+            if(!monto || monto <= 0) return alert('Ingresa un monto válido');
+            
+            const payload = {
+                tipo: 'Ingreso',
+                dueno: duenoV,
+                monto: monto,
+                metodo: metodoV,
+                cliente: document.getElementById('cliente-fiado').value,
+                descripcion: document.getElementById('desc-fiado').value,
+                fecha: document.getElementById('fecha-v').value
+            };
+
+            await fetch('/api/registrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            alert('✅ Venta registrada correctamente');
+            document.getElementById('monto-v').value = '';
+            document.getElementById('cliente-fiado').value = '';
+            document.getElementById('desc-fiado').value = '';
+        }
+
+        async function guardarGasto() {
+            const monto = document.getElementById('monto-g').value;
+            const motivo = document.getElementById('motivo-g').value;
+            if(!motivo) return alert('Ingresa el motivo del gasto');
+            if(!monto || monto <= 0) return alert('Ingresa un monto válido');
+
+            const payload = {
+                tipo: 'Gasto',
+                dueno: duenoG,
+                monto: monto,
+                motivo: motivo,
+                fecha: document.getElementById('fecha-g').value
+            };
+
+            await fetch('/api/registrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            alert('✅ Gasto registrado correctamente');
+            document.getElementById('monto-g').value = '';
+            document.getElementById('motivo-g').value = '';
+        }
+
+        async function cargarFiados() {
+            const res = await fetch('/api/datos');
+            const datos = await res.json();
+            const cont = document.getElementById('lista-fiados');
+            cont.innerHTML = '';
+            const pendientes = datos.filter(d => d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
+
+            if(pendientes.length === 0) { cont.innerHTML = '<p class="text-gray-500 text-sm">No hay fiados pendientes.</p>'; return; }
+
+            pendientes.forEach(f => {
+                cont.innerHTML += `
+                <div class="border p-3 rounded-lg flex justify-between items-center bg-white shadow-sm">
+                    <div>
+                        <div class="font-bold text-sm">👤 ${f.dueno} - S/. ${f.monto.toFixed(2)}</div>
+                        <div class="text-xs text-gray-600">Cliente: ${f.cliente} (${f.descripcion})</div>
+                        <div class="text-xs text-gray-400">${f.fecha.slice(0, 10)}</div>
+                    </div>
+                    <button onclick="cobrarFiado(${f.id})" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded shadow">Cobrar Yape</button>
+                </div>`;
+            });
+        }
+
+        async function cobrarFiado(id) {
+            await fetch('/api/cobrar_fiado', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+            alert('✅ Fiado cobrado por Yape');
+            cargarFiados();
+        }
+
+        async function cargarHistorial() {
+            const res = await fetch('/api/datos');
+            const datos = await res.json();
+            const cont = document.getElementById('lista-historial');
+            cont.innerHTML = '';
+
+            datos.slice().reverse().forEach(d => {
+                let info = d.tipo === 'Ingreso' 
+                    ? `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | Venta (${d.metodo}): S/. ${d.monto.toFixed(2)}`
+                    : `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | 💸 Gasto: S/. ${d.monto.toFixed(2)} (${d.motivo})`;
+
+                cont.innerHTML += `
+                <div class="border p-2.5 rounded-lg flex justify-between items-center bg-white text-xs shadow-sm">
+                    <span class="pr-2">${info}</span>
+                    <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded">🗑️</button>
+                </div>`;
+            });
+        }
+
+        async function eliminar(id) {
+            if(!confirm('¿Eliminar este registro?')) return;
+            await fetch('/api/eliminar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+            cargarHistorial();
+        }
+
+        async function calcularGanancias() {
+            const desde = document.getElementById('rep-desde').value;
+            const hasta = document.getElementById('rep-hasta').value;
+            const res = await fetch('/api/datos');
+            const datos = await res.json();
+
+            const balance = {
+                'BERTHA': { yape: 0, fiado_c: 0, fiado_p: 0, gastos: 0 },
+                'KARLA': { yape: 0, fiado_c: 0, fiado_p: 0, gastos: 0 },
+                'CARLITA': { yape: 0, fiado_c: 0, fiado_p: 0, gastos: 0 }
+            };
+
+            datos.forEach(d => {
+                const f = d.fecha.slice(0, 10);
+                if(f >= desde && f <= hasta) {
+                    if(d.tipo === 'Ingreso') {
+                        if(d.metodo === 'Yape') balance[d.dueno].yape += d.monto;
+                        if(d.metodo === 'Fiado') {
+                            if(d.cobrado) balance[d.dueno].fiado_c += d.monto;
+                            else balance[d.dueno].fiado_p += d.monto;
+                        }
+                    } else if(d.tipo === 'Gasto') {
+                        balance[d.dueno].gastos += d.monto;
+                    }
+                }
+            });
+
+            let html = `<div class="font-bold border-b pb-2 text-slate-800">📊 BALANCE DEL ${desde} AL ${hasta}</div>`;
+            let netos = {};
+
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const b = balance[nom];
+                const neto = (b.yape + b.fiado_c) - b.gastos;
+                netos[nom] = neto;
+                const color = neto >= 0 ? 'text-green-600' : 'text-red-600';
+                const sign = neto >= 0 ? '+' : '';
+
+                html += `
+                <div class="border-b pb-2">
+                    <div class="font-bold text-slate-700">👤 ${nom}:</div>
+                    <div>(+) Yape recibido: S/. ${b.yape.toFixed(2)}</div>
+                    <div>(+) Fiados cobrados: S/. ${b.fiado_c.toFixed(2)}</div>
+                    <div>(-) Gastos realizados: S/. ${b.gastos.toFixed(2)}</div>
+                    <div class="font-bold ${color}">👉 GANANCIA NETA: S/. ${sign}${neto.toFixed(2)}</div>
+                    <div class="text-xs text-gray-500">⏳ Fiados por cobrar: S/. ${b.fiado_p.toFixed(2)}</div>
+                </div>`;
+            });
+
+            html += `<div class="font-bold pt-2 text-slate-800">💰 TOTAL EN CAJA POR DUEÑA:</div>`;
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const n = netos[nom];
+                const color = n >= 0 ? 'text-green-600' : 'text-red-600';
+                const sign = n >= 0 ? '+' : '';
+                html += `<div class="font-bold ${color}">• ${nom}: S/. ${sign}${n.toFixed(2)}</div>`;
+            });
+
+            document.getElementById('resultado-reporte').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
