@@ -40,7 +40,12 @@
     <div id="app-container" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg p-4 hidden">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-lg font-bold text-slate-800">💼 Sistema de Caja</h1>
-            <button onclick="bloquearApp()" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded-md font-bold text-gray-700">🔒 Bloquear</button>
+            <div class="flex space-x-2">
+                <button onclick="forzarSincronizacion()" title="Actualizar datos ahora" class="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded-md font-bold transition flex items-center space-x-1">
+                    <span>🔄</span> <span>Actualizar</span>
+                </button>
+                <button onclick="bloquearApp()" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded-md font-bold text-gray-700">🔒 Bloquear</button>
+            </div>
         </div>
         
         <!-- Pestañas de Navegación -->
@@ -204,15 +209,47 @@
         }
         setFechaHoy();
 
-        // SINCRONIZACIÓN PERIÓDICA EN VIVO CADA 3 SEGUNDOS
+        // PETICIÓN HTTP SEGURA QUE DESACTIVA EL CACHÉ EN MÓVILES
+        async function fetchSinCache(url, opciones = {}) {
+            const separador = url.includes('?') ? '&' : '?';
+            const urlConTimestamp = `${url}${separador}_t=${Date.now()}`;
+            return await fetch(urlConTimestamp, {
+                ...opciones,
+                cache: 'no-store',
+                headers: {
+                    ...opciones.headers,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+        }
+
+        // AUTO-SINCRONIZACIÓN INMEDIATA AL VOLVER A TOCAR EL CELULAR O CAMBIAR DE APP
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                forzarSincronizacion();
+            }
+        });
+        window.addEventListener('focus', () => {
+            forzarSincronizacion();
+        });
+
+        // TEMPORIZADOR EN SEGUNDO PLANO (CADA 2.5 SEGUNDOS)
         setInterval(() => {
             if (tabActual === 'historial') cargarHistorialSilencioso();
             if (tabActual === 'fiados') cargarFiadosSilencioso();
-        }, 3000);
+        }, 2500);
+
+        function forzarSincronizacion() {
+            if (tabActual === 'fiados') cargarFiados();
+            if (tabActual === 'historial') cargarHistorial();
+            if (tabActual === 'reporte') calcularGanancias();
+        }
 
         async function validarPin() {
             const pin = document.getElementById('input-pin').value;
-            const res = await fetch('/api/verificar_pin', {
+            const res = await fetchSinCache('/api/verificar_pin', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ pin })
@@ -249,6 +286,7 @@
                 actualizarBotonPapelera();
                 cargarHistorial();
             }
+            if(tab === 'reporte') calcularGanancias();
         }
 
         function seleccionarDuenoV(d) {
@@ -296,7 +334,11 @@
                 fecha: document.getElementById('fecha-v').value
             };
 
-            await fetch('/api/registrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            await fetchSinCache('/api/registrar', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(payload) 
+            });
             alert('✅ Registro guardado correctamente');
             document.getElementById('monto-v').value = '';
             document.getElementById('desc-yape').value = '';
@@ -319,7 +361,11 @@
                 fecha: document.getElementById('fecha-g').value
             };
 
-            await fetch('/api/registrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            await fetchSinCache('/api/registrar', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(payload) 
+            });
             alert('✅ Gasto registrado correctamente');
             document.getElementById('monto-g').value = '';
             document.getElementById('motivo-g').value = '';
@@ -327,14 +373,14 @@
         }
 
         async function cargarFiados() {
-            const res = await fetch('/api/datos');
+            const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
             fiadosGlobales = datos.filter(d => !d.eliminado && d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
             filtrarFiados();
         }
 
         async function cargarFiadosSilencioso() {
-            const res = await fetch('/api/datos');
+            const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
             fiadosGlobales = datos.filter(d => !d.eliminado && d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
             filtrarFiados();
@@ -372,7 +418,7 @@
         }
 
         async function cobrarFiado(id, metodoCobro) {
-            await fetch('/api/cobrar_fiado', { 
+            await fetchSinCache('/api/cobrar_fiado', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({ id: id, metodo_cobro: metodoCobro }) 
@@ -383,7 +429,7 @@
 
         async function deshacerCobro(id) {
             if(!confirm('¿Deseas volver a poner este fiado como PENDIENTE de pago?')) return;
-            await fetch('/api/deshacer_cobro', {
+            await fetchSinCache('/api/deshacer_cobro', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id: id })
@@ -414,14 +460,14 @@
         }
 
         async function cargarHistorial() {
-            const res = await fetch('/api/datos');
+            const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
             datosCompletosGlobales = datos;
             renderizarHistorial();
         }
 
         async function cargarHistorialSilencioso() {
-            const res = await fetch('/api/datos');
+            const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
             datosCompletosGlobales = datos;
             renderizarHistorial();
@@ -548,12 +594,20 @@
 
         async function eliminar(id) {
             if(!confirm('¿Mover este registro a la papelera?')) return;
-            await fetch('/api/eliminar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+            await fetchSinCache('/api/eliminar', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({id}) 
+            });
             cargarHistorial();
         }
 
         async function restaurar(id) {
-            await fetch('/api/restaurar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+            await fetchSinCache('/api/restaurar', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({id}) 
+            });
             alert('✅ Registro restaurado al historial.');
             cerrarDetalle();
             cargarHistorial();
@@ -562,7 +616,7 @@
         async function calcularGanancias() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
-            const res = await fetch('/api/datos');
+            const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
 
             const balance = {
@@ -655,7 +709,7 @@
         function descargarExcel() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
-            window.location.href = `/api/exportar_csv?desde=${desde}&hasta=${hasta}`;
+            window.location.href = `/api/exportar_csv?desde=${desde}&hasta=${hasta}&_t=${Date.now()}`;
         }
     </script>
 </body>
