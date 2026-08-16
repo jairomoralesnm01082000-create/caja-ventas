@@ -10,10 +10,27 @@
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-gray-800 pb-12">
-    <div class="max-w-lg mx-auto bg-white min-h-screen shadow-lg p-4">
-        <h1 class="text-xl font-bold text-center text-slate-800 mb-4">💼 Sistema de Caja</h1>
+
+    <!-- MODAL DE BLOQUEO POR PIN -->
+    <div id="modal-pin" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-xs w-full text-center space-y-4">
+            <div class="text-3xl">🔒</div>
+            <h2 class="text-lg font-bold text-slate-800">Acceso Seguro</h2>
+            <p class="text-xs text-gray-500">Ingresa el PIN de 4 dígitos para ingresar a la caja</p>
+            <input type="password" id="input-pin" maxlength="4" placeholder="••••" class="w-full p-3 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-xl focus:border-green-600 focus:outline-none">
+            <button onclick="validarPin()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-95 transition">Ingresar</button>
+            <p id="error-pin" class="text-xs text-red-600 font-bold hidden">PIN incorrecto. Intenta de nuevo.</p>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DE LA APP -->
+    <div id="app-container" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg p-4 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-lg font-bold text-slate-800">💼 Sistema de Caja</h1>
+            <button onclick="bloquearApp()" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded-md font-bold text-gray-700">🔒 Bloquear</button>
+        </div>
         
-        <!-- Pestañas -->
+        <!-- Pestañas de Navegación -->
         <div class="flex border-b border-gray-200 text-xs sm:text-sm font-semibold mb-4 overflow-x-auto">
             <button onclick="cambiarTab('venta')" id="tab-venta" class="px-3 py-2 border-b-2 border-green-600 text-green-600 font-bold whitespace-nowrap">Venta / Fiado</button>
             <button onclick="cambiarTab('gasto')" id="tab-gasto" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Gasto</button>
@@ -22,7 +39,7 @@
             <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
         </div>
 
-        <!-- 1. Venta / Fiado -->
+        <!-- 1. VENTA / FIADO -->
         <div id="sec-venta" class="space-y-4">
             <label class="block font-bold text-sm">Dueña:</label>
             <div class="grid grid-cols-3 gap-2">
@@ -50,7 +67,7 @@
             <div id="campos-fiado" class="space-y-3 hidden">
                 <div>
                     <label class="block font-bold text-sm mb-1">Nombre del Cliente:</label>
-                    <input type="text" id="cliente-fiado" placeholder="Nombre de la persona" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="cliente-fiado" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
                     <label class="block font-bold text-sm mb-1">Descripción del Fiado:</label>
@@ -66,7 +83,7 @@
             <button onclick="guardarVenta()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition">💾 Guardar Venta / Fiado</button>
         </div>
 
-        <!-- 2. Gasto -->
+        <!-- 2. GASTO -->
         <div id="sec-gasto" class="space-y-4 hidden">
             <label class="block font-bold text-sm">Dueña a descontar:</label>
             <div class="grid grid-cols-3 gap-2">
@@ -77,7 +94,7 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Motivo del Gasto:</label>
-                <input type="text" id="motivo-g" placeholder="Ej: Compra de bolsas, pasaje" class="w-full p-2 border border-gray-300 rounded-lg">
+                <input type="text" id="motivo-g" placeholder="Ej: Bolsas, pasajes, compras" class="w-full p-2 border border-gray-300 rounded-lg">
             </div>
 
             <div>
@@ -93,13 +110,25 @@
             <button onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
         </div>
 
-        <!-- 3. Cobro de Fiados -->
+        <!-- 3. COBRAR FIADOS CON FILTRADOR Y TOTALIZADOR -->
         <div id="sec-fiados" class="space-y-4 hidden">
+            <!-- Barra de búsqueda / filtrador -->
+            <div>
+                <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
+                <input type="text" id="buscar-fiador" oninput="filtrarFiados()" placeholder="Escribe el nombre del cliente..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none">
+            </div>
+
+            <!-- Resumen de deuda acumulada -->
+            <div id="box-total-deuda" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
+                <span class="text-xs font-bold text-amber-800">Deuda total pendiente:</span>
+                <span id="total-deuda-texto" class="text-base font-bold text-amber-900">S/. 0.00</span>
+            </div>
+
             <h2 class="font-bold text-sm text-gray-700">Fiados Pendientes:</h2>
             <div id="lista-fiados" class="space-y-2"></div>
         </div>
 
-        <!-- 4. Reporte -->
+        <!-- 4. REPORTE Y EXPORTACIÓN A EXCEL -->
         <div id="sec-reporte" class="space-y-4 hidden">
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -111,11 +140,18 @@
                     <input type="date" id="rep-hasta" class="w-full p-2 border border-gray-300 rounded">
                 </div>
             </div>
-            <button onclick="calcularGanancias()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow hover:bg-blue-700">🔍 Calcular Ganancias</button>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="calcularGanancias()" class="bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow hover:bg-blue-700 text-xs">🔍 Calcular</button>
+                <button onclick="descargarExcel()" class="bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow hover:bg-emerald-800 text-xs flex items-center justify-center space-x-1">
+                    <span>📥 Descargar Excel</span>
+                </button>
+            </div>
+
             <div id="resultado-reporte" class="bg-gray-50 p-4 rounded-lg border border-gray-200 font-mono text-sm space-y-3"></div>
         </div>
 
-        <!-- 5. Historial -->
+        <!-- 5. HISTORIAL -->
         <div id="sec-historial" class="space-y-3 hidden">
             <h2 class="font-bold text-sm text-gray-700">Historial completo:</h2>
             <div id="lista-historial" class="space-y-2"></div>
@@ -126,6 +162,7 @@
         let duenoV = 'BERTHA';
         let duenoG = 'BERTHA';
         let metodoV = 'Yape';
+        let fiadosGlobales = [];
 
         function setFechaHoy() {
             const hoy = new Date().toISOString().split('T')[0];
@@ -135,6 +172,31 @@
             document.getElementById('rep-hasta').value = hoy;
         }
         setFechaHoy();
+
+        // VALIDACIÓN DE PIN
+        async function validarPin() {
+            const pin = document.getElementById('input-pin').value;
+            const res = await fetch('/api/verificar_pin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ pin })
+            });
+            const data = await res.json();
+            if (data.valido) {
+                document.getElementById('modal-pin').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('error-pin').classList.add('hidden');
+            } else {
+                document.getElementById('error-pin').classList.remove('hidden');
+                document.getElementById('input-pin').value = '';
+            }
+        }
+
+        function bloquearApp() {
+            document.getElementById('modal-pin').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('input-pin').value = '';
+        }
 
         function cambiarTab(tab) {
             ['venta', 'gasto', 'fiados', 'reporte', 'historial'].forEach(t => {
@@ -214,24 +276,40 @@
             document.getElementById('motivo-g').value = '';
         }
 
+        // CARGA Y FILTRADO DE FIADOS
         async function cargarFiados() {
             const res = await fetch('/api/datos');
             const datos = await res.json();
+            fiadosGlobales = datos.filter(d => d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
+            filtrarFiados();
+        }
+
+        function filtrarFiados() {
+            const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
             const cont = document.getElementById('lista-fiados');
             cont.innerHTML = '';
-            const pendientes = datos.filter(d => d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
 
-            if(pendientes.length === 0) { cont.innerHTML = '<p class="text-gray-500 text-sm">No hay fiados pendientes.</p>'; return; }
+            const filtrados = fiadosGlobales.filter(f => (f.cliente || '').toLowerCase().includes(busqueda));
+            
+            // Calcular la deuda acumulada de los fiados filtrados
+            const totalDeuda = filtrados.reduce((acc, curr) => acc + curr.monto, 0);
+            document.getElementById('total-deuda-texto').innerText = `S/. ${totalDeuda.toFixed(2)}`;
 
-            pendientes.forEach(f => {
+            if(filtrados.length === 0) {
+                cont.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No se encontraron fiados pendientes.</p>';
+                return;
+            }
+
+            filtrados.forEach(f => {
                 cont.innerHTML += `
                 <div class="border p-3 rounded-lg flex justify-between items-center bg-white shadow-sm">
                     <div>
                         <div class="font-bold text-sm">👤 ${f.dueno} - S/. ${f.monto.toFixed(2)}</div>
-                        <div class="text-xs text-gray-600">Cliente: ${f.cliente} (${f.descripcion})</div>
+                        <div class="text-xs font-semibold text-indigo-700">Cliente: ${f.cliente || 'Sin nombre'}</div>
+                        <div class="text-xs text-gray-600">${f.descripcion || ''}</div>
                         <div class="text-xs text-gray-400">${f.fecha.slice(0, 10)}</div>
                     </div>
-                    <button onclick="cobrarFiado(${f.id})" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded shadow">Cobrar Yape</button>
+                    <button onclick="cobrarFiado(${f.id})" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-green-700 active:scale-95 transition">Cobrar Yape</button>
                 </div>`;
             });
         }
@@ -324,6 +402,12 @@
             });
 
             document.getElementById('resultado-reporte').innerHTML = html;
+        }
+
+        function descargarExcel() {
+            const desde = document.getElementById('rep-desde').value;
+            const hasta = document.getElementById('rep-hasta').value;
+            window.location.href = `/api/exportar_csv?desde=${desde}&hasta=${hasta}`;
         }
     </script>
 </body>

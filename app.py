@@ -1,13 +1,18 @@
+import csv
 import datetime
+import io
 import json
 import os
 import urllib.request
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
 app = Flask(__name__)
 
 # Enlace de tu base de datos persistente en Firebase
 FIREBASE_URL = "https://caja-ventas-default-rtdb.firebaseio.com"
+
+# PIN de acceso de 4 dígitos actualizado
+PIN_ACCESO = "0108"
 
 DUENOS = ["BERTHA", "KARLA", "CARLITA"]
 FORMATO_FECHA = "%Y-%m-%d"
@@ -15,7 +20,7 @@ FORMATO_FECHA_HORA = "%Y-%m-%d %H:%M:%S"
 
 
 # ==========================================
-# GESTIÓN DE DATOS EN LA NUBE (PERSISTENCIA)
+# GESTIÓN DE DATOS EN LA NUBE (FIREBASE)
 # ==========================================
 def cargar_datos():
     """Lee las transacciones directamente desde Firebase."""
@@ -37,7 +42,7 @@ def cargar_datos():
 
 
 def guardar_datos(datos):
-    """Guarda las transacciones en Firebase de forma permanente."""
+    """Guarda todas las transacciones en Firebase permanentemente."""
     try:
         data_json = json.dumps(datos).encode("utf-8")
         req = urllib.request.Request(
@@ -53,12 +58,22 @@ def guardar_datos(datos):
 
 
 # ==========================================
-# RUTAS DEL SERVIDOR WEB
+# RUTAS DEL SERVIDOR
 # ==========================================
 @app.route("/")
 def inicio():
-    """Entrega la pantalla principal."""
+    """Entrega la interfaz web a laptops y celulares."""
     return render_template("index.html", duenos=DUENOS)
+
+
+@app.route("/api/verificar_pin", methods=["POST"])
+def verificar_pin():
+    """Verifica si el PIN ingresado por el usuario es 0108."""
+    payload = request.json
+    pin_ingresado = payload.get("pin", "")
+    if pin_ingresado == PIN_ACCESO:
+        return jsonify({"status": "ok", "valido": True})
+    return jsonify({"status": "error", "valido": False})
 
 
 @app.route("/api/datos", methods=["GET"])
@@ -83,8 +98,8 @@ def registrar_operacion():
 
     if tipo == "Ingreso":
         metodo = payload.get("metodo")
-        cliente = payload.get("cliente", "")
-        descripcion = payload.get("descripcion", "")
+        cliente = payload.get("cliente", "").strip()
+        descripcion = payload.get("descripcion", "").strip()
         nuevo_registro = {
             "id": nuevo_id,
             "tipo": "Ingreso",
@@ -97,7 +112,7 @@ def registrar_operacion():
             "cobrado": True if metodo == "Yape" else False,
         }
     else:
-        motivo = payload.get("motivo", "")
+        motivo = payload.get("motivo", "").strip()
         nuevo_registro = {
             "id": nuevo_id,
             "tipo": "Gasto",
@@ -141,6 +156,79 @@ def eliminar_registro():
     datos = [d for d in datos if d.get("id") != registro_id]
     guardar_datos(datos)
     return jsonify({"status": "ok"})
+
+
+@app.route("/api/exportar_csv", methods=["GET"])
+def exportar_csv():
+    """Genera y descarga un archivo CSV compatible con Excel."""
+    desde = request.args.get(
+        "desde", datetime.datetime.now().strftime(FORMATO_FECHA)
+    )
+    hasta = request.args.get(
+        "hasta", datetime.datetime.now().strftime(FORMATO_FECHA)
+    )
+
+    datos = cargar_datos()
+    salida = io.StringIO()
+    salida.write("\ufeff")  # BOM UTF-8 para compatibilidad con caracteres en Excel
+
+    escritor = csv.writer(salida, delimiter=";")
+    escritor.writerow(
+        [
+            "ID",
+            "Fecha",
+            "Dueña",
+            "Tipo",
+            "Monto (S/.)",
+            "Método",
+            "Cliente / Motivo",
+            "Descripción",
+            "Estado Cobro",
+        ]
+    )
+
+    for d in datos:
+        f = d.get("fecha", "")[:10]
+        if desde <= f <= hasta:
+            tipo = d.get("tipo", "")
+            dueno = d.get("dueno", "")
+            monto = f"{d.get('monto', 0):.2f}"
+            metodo = d.get("metodo", "-")
+            detalle = (
+                d.get("cliente", "")
+                if tipo == "Ingreso"
+                else d.get("motivo", "")
+            )
+            desc = d.get("descripcion", "-")
+            estado = (
+                "Cobrado"
+                if d.get("cobrado", True)
+                else "Pendiente de Pago (Fiado)"
+            )
+
+            escritor.writerow(
+                [
+                    d.get("id"),
+                    f,
+                    dueno,
+                    tipo,
+                    monto,
+                    metodo,
+                    detalle,
+                    desc,
+                    estado,
+                ]
+            )
+
+    salida.seek(0)
+    nombre_archivo = f"reporte_caja_{desde}_al_{hasta}.csv"
+    return Response(
+        salida.getvalue(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": f"attachment;filename={nombre_archivo}"
+        },
+    )
 
 
 if __name__ == "__main__":
