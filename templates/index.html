@@ -9,7 +9,6 @@
         .selected-border { border: 3px solid #22c55e !important; background-color: #ecfdf5 !important; color: #15803d !important; }
         .filter-active { background-color: #1e293b !important; color: #ffffff !important; }
         
-        /* Animación suave para notificaciones Toast */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translate(-50%, -20px); }
             to { opacity: 1; transform: translate(-50%, 0); }
@@ -47,7 +46,7 @@
                 <h3 class="font-bold text-sm text-slate-800">💵 Registrar Abono</h3>
                 <button onclick="cerrarAbono()" class="text-gray-400 font-bold text-lg">&times;</button>
             </div>
-            <p id="info-abono-fiado" class="text-xs text-gray-600"></p>
+            <p id="info-abono-fiado" class="text-xs text-gray-600 uppercase"></p>
             <div>
                 <label class="block text-xs font-bold mb-1">Monto a abonar (S/.):</label>
                 <input type="number" step="0.10" id="monto-abono-input" placeholder="Ej: 5.00" class="w-full p-2 border rounded-lg text-base font-bold">
@@ -85,17 +84,17 @@
             </div>
             <div>
                 <label id="edit-label-detalle" class="block text-xs font-bold mb-1">Cliente / Motivo:</label>
-                <input type="text" id="edit-detalle" class="w-full p-2 border rounded-lg text-xs">
+                <input type="text" id="edit-detalle" class="w-full p-2 border rounded-lg text-xs uppercase">
             </div>
             <div id="edit-box-desc">
                 <label class="block text-xs font-bold mb-1">Descripción / Producto:</label>
-                <input type="text" id="edit-desc" class="w-full p-2 border rounded-lg text-xs">
+                <input type="text" id="edit-desc" class="w-full p-2 border rounded-lg text-xs uppercase">
             </div>
             <button id="btn-guardar-edicion" onclick="guardarEdicion()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">Guardar Cambios</button>
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS Y HORAS -->
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
             <div class="flex justify-between items-center border-b pb-2">
@@ -156,7 +155,7 @@
 
                 <div>
                     <label class="block font-bold text-sm mb-1">Descripción / Producto (Opcional):</label>
-                    <input type="text" id="desc-v" placeholder="Ej: Gaseosa 1.5L, Pan, Shampoo" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                    <input type="text" id="desc-v" placeholder="Ej: Gaseosa 1.5L, Pan, Shampoo" class="w-full p-2 border border-gray-300 rounded-lg text-sm uppercase">
                 </div>
             </div>
 
@@ -171,7 +170,7 @@
                     <span class="text-xs font-bold text-gray-700">👤 BERTHA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
                         <input type="number" step="0.10" id="comp-monto-BERTHA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
-                        <input type="text" id="comp-desc-BERTHA" placeholder="Producto de Bertha" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                        <input type="text" id="comp-desc-BERTHA" placeholder="Producto de Bertha" class="col-span-2 p-2 border rounded-lg text-xs bg-white uppercase">
                     </div>
                 </div>
 
@@ -179,7 +178,7 @@
                     <span class="text-xs font-bold text-gray-700">👤 KARLA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
                         <input type="number" step="0.10" id="comp-monto-KARLA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
-                        <input type="text" id="comp-desc-KARLA" placeholder="Producto de Karla" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                        <input type="text" id="comp-desc-KARLA" placeholder="Producto de Karla" class="col-span-2 p-2 border rounded-lg text-xs bg-white uppercase">
                     </div>
                 </div>
 
@@ -187,7 +186,7 @@
                     <span class="text-xs font-bold text-gray-700">👤 CARLITA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
                         <input type="number" step="0.10" id="comp-monto-CARLITA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
-                        <input type="text" id="comp-desc-CARLITA" placeholder="Producto de Carlita" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                        <input type="text" id="comp-desc-CARLITA" placeholder="Producto de Carlita" class="col-span-2 p-2 border rounded-lg text-xs bg-white uppercase">
                     </div>
                 </div>
             </div>
@@ -205,7 +204,7 @@
 
             <div>
                 <label id="lbl-cliente-v" class="block font-bold text-sm mb-1">Nombre del Cliente (Opcional):</label>
-                <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm uppercase">
             </div>
 
             <div>
@@ -227,7 +226,7 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Motivo del Gasto:</label>
-                <input type="text" id="motivo-g" placeholder="Ej: Bolsas, pasajes, compras" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                <input type="text" id="motivo-g" placeholder="Ej: Bolsas, pasajes, compras" class="w-full p-2 border border-gray-300 rounded-lg text-sm uppercase">
             </div>
 
             <div>
@@ -263,7 +262,7 @@
 
             <div>
                 <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
-                <input type="text" id="buscar-fiador" oninput="filtrarFiados()" placeholder="Escribe el nombre del cliente..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none">
+                <input type="text" id="buscar-fiador" oninput="filtrarFiados()" placeholder="Escribe el nombre del cliente..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none uppercase">
             </div>
 
             <div id="box-total-deuda" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
@@ -321,7 +320,7 @@
 
             <!-- Buscador de texto en vivo -->
             <div>
-                <input type="text" id="buscar-historial" oninput="renderizarHistorial()" placeholder="🔍 Buscar (cliente, producto, motivo, monto)..." class="w-full p-2 border border-gray-300 rounded-lg text-xs focus:border-green-600 focus:outline-none">
+                <input type="text" id="buscar-historial" oninput="renderizarHistorial()" placeholder="🔍 Buscar (cliente, producto, motivo, monto)..." class="w-full p-2 border border-gray-300 rounded-lg text-xs focus:border-green-600 focus:outline-none uppercase">
             </div>
 
             <!-- Filtro de Fecha para el Historial con Atajos -->
@@ -411,7 +410,6 @@
         }
         setFechaHoy();
 
-        // ATAJOS DE FECHA EN HISTORIAL
         function setFechaHistorialRapida(tipo) {
             if (tipo === 'hoy') {
                 document.getElementById('filtro-fecha-historial').value = obtenerFechaLocalTexto();
@@ -631,7 +629,8 @@
             const btn = document.getElementById('btn-guardar-venta');
             const fechaSeleccionada = document.getElementById('fecha-v').value;
             const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
-            const clienteVal = document.getElementById('cliente-v').value;
+            // Captura en mayúsculas
+            const clienteVal = (document.getElementById('cliente-v').value || '').trim().toUpperCase();
 
             if (duenoV === 'COMPARTIDO') {
                 const mB = parseFloat(document.getElementById('comp-monto-BERTHA').value) || 0;
@@ -645,9 +644,9 @@
                 btn.innerText = '⏳ Guardando venta...';
 
                 const distribuciones = [
-                    { dueno: 'BERTHA', monto: mB, descripcion: document.getElementById('comp-desc-BERTHA').value },
-                    { dueno: 'KARLA', monto: mK, descripcion: document.getElementById('comp-desc-KARLA').value },
-                    { dueno: 'CARLITA', monto: mC, descripcion: document.getElementById('comp-desc-CARLITA').value }
+                    { dueno: 'BERTHA', monto: mB, descripcion: (document.getElementById('comp-desc-BERTHA').value || '').trim().toUpperCase() },
+                    { dueno: 'KARLA', monto: mK, descripcion: (document.getElementById('comp-desc-KARLA').value || '').trim().toUpperCase() },
+                    { dueno: 'CARLITA', monto: mC, descripcion: (document.getElementById('comp-desc-CARLITA').value || '').trim().toUpperCase() }
                 ];
 
                 await fetchSinCache('/api/registrar_compartido', {
@@ -691,7 +690,7 @@
                 monto: monto,
                 metodo: metodoV,
                 cliente: clienteVal,
-                descripcion: document.getElementById('desc-v').value,
+                descripcion: (document.getElementById('desc-v').value || '').trim().toUpperCase(),
                 fecha_hora: fechaHoraCompleta
             };
 
@@ -715,7 +714,7 @@
         async function guardarGasto() {
             const btn = document.getElementById('btn-guardar-gasto');
             const monto = parseFloat(document.getElementById('monto-g').value);
-            const motivo = document.getElementById('motivo-g').value;
+            const motivo = (document.getElementById('motivo-g').value || '').trim().toUpperCase();
             if(!motivo) return alert('Ingresa el motivo del gasto');
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
 
@@ -775,11 +774,11 @@
         }
 
         function filtrarFiados() {
-            const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
+            const busqueda = (document.getElementById('buscar-fiador').value || '').toUpperCase().trim();
             const cont = document.getElementById('lista-fiados');
             cont.innerHTML = '';
 
-            let filtrados = fiadosGlobales.filter(f => (f.cliente || '').toLowerCase().includes(busqueda));
+            let filtrados = fiadosGlobales.filter(f => (f.cliente || '').toUpperCase().includes(busqueda));
 
             if (filtroDuenoFiadosActual !== 'TODAS') {
                 filtrados = filtrados.filter(f => f.dueno === filtroDuenoFiadosActual);
@@ -808,11 +807,11 @@
                             <span class="text-red-600 font-black">- S/. ${f.monto.toFixed(2)}</span>
                         </div>
                         <div class="text-xs font-bold text-indigo-700 mt-0.5">Dueña: ${f.dueno}</div>
-                        ${f.descripcion ? `<div class="text-xs text-gray-600 italic">Prod: ${f.descripcion}</div>` : ''}
+                        ${f.descripcion ? `<div class="text-xs text-gray-600 italic">Prod: ${f.descripcion.toUpperCase()}</div>` : ''}
                         <div class="text-[11px] text-gray-400">🕒 ${horaLegible}</div>
                     </div>
                     <div class="flex flex-wrap gap-1 items-center">
-                        <button onclick="abrirAbono(${f.id}, '${f.cliente || 'Sin nombre'}', ${f.monto})" class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-amber-600">Abonar</button>
+                        <button onclick="abrirAbono(${f.id}, '${(f.cliente || 'Sin nombre').toUpperCase()}', ${f.monto})" class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-amber-600">Abonar</button>
                         <button onclick="cobrarFiado(${f.id}, 'Yape')" class="bg-purple-700 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-purple-800">Yape</button>
                         <button onclick="cobrarFiado(${f.id}, 'Efectivo')" class="bg-green-600 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-green-700">Efectivo</button>
                     </div>
@@ -822,7 +821,7 @@
 
         function abrirAbono(id, cliente, deuda) {
             fiadoAbonoSeleccionado = id;
-            document.getElementById('info-abono-fiado').innerText = `Cliente: ${cliente} | Deuda actual: S/. ${deuda.toFixed(2)}`;
+            document.getElementById('info-abono-fiado').innerText = `Cliente: ${cliente.toUpperCase()} | Deuda actual: S/. ${deuda.toFixed(2)}`;
             document.getElementById('monto-abono-input').value = '';
             document.getElementById('modal-abono').classList.remove('hidden');
         }
@@ -945,31 +944,28 @@
             renderizarHistorial();
         }
 
-        // RENDERIZADO DEL HISTORIAL CON FILTRO COMBINADO (DUEÑA + TEXTO + FECHA)
+        // RENDERIZADO DEL HISTORIAL CON TODO EN MAYÚSCULAS
         function renderizarHistorial() {
             const cont = document.getElementById('lista-historial');
-            const textoBusqueda = (document.getElementById('buscar-historial').value || '').toLowerCase().trim();
+            const textoBusqueda = (document.getElementById('buscar-historial').value || '').toUpperCase().trim();
             const fechaFiltro = document.getElementById('filtro-fecha-historial').value;
             cont.innerHTML = '';
 
             let listaFiltrada = datosCompletosGlobales.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
 
-            // 1. Filtro por Dueña
             if (filtroDuenoActual !== 'TODAS') {
                 listaFiltrada = listaFiltrada.filter(d => d.dueno === filtroDuenoActual);
             }
 
-            // 2. Filtro por Fecha específica
             if (fechaFiltro) {
                 listaFiltrada = listaFiltrada.filter(d => d.fecha && d.fecha.startsWith(fechaFiltro));
             }
 
-            // 3. Filtro por Texto en tiempo real
             if (textoBusqueda) {
                 listaFiltrada = listaFiltrada.filter(d => {
-                    const cli = (d.cliente || '').toLowerCase();
-                    const desc = (d.descripcion || '').toLowerCase();
-                    const mot = (d.motivo || '').toLowerCase();
+                    const cli = (d.cliente || '').toUpperCase();
+                    const desc = (d.descripcion || '').toUpperCase();
+                    const mot = (d.motivo || '').toUpperCase();
                     const monto = (d.monto || '').toString();
                     return cli.includes(textoBusqueda) || desc.includes(textoBusqueda) || mot.includes(textoBusqueda) || monto.includes(textoBusqueda);
                 });
@@ -1014,13 +1010,18 @@
 
                 if (viendoPapelera) bgCard = 'bg-red-50 border-red-200';
 
+                // Renderizado forzado a mayúsculas
+                const clienteTexto = d.cliente ? d.cliente.toUpperCase() : '';
+                const descTexto = d.descripcion ? d.descripcion.toUpperCase() : '';
+                const motivoTexto = d.motivo ? d.motivo.toUpperCase() : '';
+
                 cont.innerHTML += `
                 <div class="border p-2.5 rounded-lg flex justify-between items-center ${bgCard} text-xs shadow-sm cursor-pointer hover:shadow-md transition">
                     <div class="flex-1 pr-2" onclick="verDetalle(${d.id})">
                         <div>${info}</div>
-                        ${d.cliente ? `<div class="text-gray-600 font-semibold">Cliente: ${d.cliente}</div>` : ''}
-                        ${d.descripcion ? `<div class="text-gray-500 italic">Prod: ${d.descripcion}</div>` : ''}
-                        ${d.motivo ? `<div class="text-gray-500 italic">Motivo: ${d.motivo}</div>` : ''}
+                        ${clienteTexto ? `<div class="text-gray-600 font-semibold">Cliente: ${clienteTexto}</div>` : ''}
+                        ${descTexto ? `<div class="text-gray-500 italic">Prod: ${descTexto}</div>` : ''}
+                        ${motivoTexto ? `<div class="text-gray-500 italic">Motivo: ${motivoTexto}</div>` : ''}
                     </div>
                     <div class="flex items-center space-x-1">
                         ${viendoPapelera 
@@ -1046,12 +1047,12 @@
 
             if (item.tipo === 'Ingreso') {
                 document.getElementById('edit-label-detalle').innerText = 'Nombre del Cliente:';
-                document.getElementById('edit-detalle').value = item.cliente || '';
+                document.getElementById('edit-detalle').value = (item.cliente || '').toUpperCase();
                 document.getElementById('edit-box-desc').classList.remove('hidden');
-                document.getElementById('edit-desc').value = item.descripcion || '';
+                document.getElementById('edit-desc').value = (item.descripcion || '').toUpperCase();
             } else {
                 document.getElementById('edit-label-detalle').innerText = 'Motivo del Gasto:';
-                document.getElementById('edit-detalle').value = item.motivo || '';
+                document.getElementById('edit-detalle').value = (item.motivo || '').toUpperCase();
                 document.getElementById('edit-box-desc').classList.add('hidden');
             }
 
@@ -1067,8 +1068,8 @@
             const id = parseInt(document.getElementById('edit-id').value);
             const dueno = document.getElementById('edit-dueno').value;
             const monto = parseFloat(document.getElementById('edit-monto').value);
-            const detalle = document.getElementById('edit-detalle').value;
-            const desc = document.getElementById('edit-desc').value;
+            const detalle = (document.getElementById('edit-detalle').value || '').trim().toUpperCase();
+            const desc = (document.getElementById('edit-desc').value || '').trim().toUpperCase();
 
             if (!monto || monto <= 0) return alert('Ingresa un monto válido');
 
@@ -1103,8 +1104,8 @@
 
             if (item.tipo === 'Ingreso') {
                 html += `<div><b>Método Inicial:</b> ${item.metodo}</div>`;
-                if (item.cliente) html += `<div><b>Cliente:</b> ${item.cliente}</div>`;
-                if (item.descripcion) html += `<div><b>Descripción / Producto:</b> ${item.descripcion}</div>`;
+                if (item.cliente) html += `<div><b>Cliente:</b> ${(item.cliente).toUpperCase()}</div>`;
+                if (item.descripcion) html += `<div><b>Descripción / Producto:</b> ${(item.descripcion).toUpperCase()}</div>`;
                 if (item.metodo === 'Fiado') {
                     html += `<div><b>Estado:</b> ${item.cobrado ? '✅ Cobrado' : '⏳ Pendiente de cobro'}</div>`;
                     if (item.cobrado && item.metodo_cobro) html += `<div><b>Cobrado mediante:</b> ${item.metodo_cobro}</div>`;
@@ -1123,7 +1124,7 @@
                     }
                 }
             } else {
-                html += `<div><b>Motivo del Gasto:</b> ${item.motivo}</div>`;
+                html += `<div><b>Motivo del Gasto:</b> ${(item.motivo || '').toUpperCase()}</div>`;
             }
 
             if (item.eliminado) {
