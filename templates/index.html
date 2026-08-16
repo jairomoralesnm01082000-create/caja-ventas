@@ -468,6 +468,7 @@
             cargarHistorial();
         }
 
+        // CÁLCULO DE GANANCIAS CON BALANCE EXCLUSIVO DE YAPE VS GASTOS
         async function calcularGanancias() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
@@ -504,33 +505,58 @@
             });
 
             let html = `<div class="font-bold border-b pb-2 text-slate-800">📊 BALANCE DEL ${desde} AL ${hasta}</div>`;
-            let netos = {};
+            let netosGlobales = {};
+            let netosYape = {};
 
             ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
                 const b = balance[nom];
                 const totalIngresos = b.yape + b.efectivo;
-                const neto = totalIngresos - b.gastos;
-                netos[nom] = neto;
-                const color = neto >= 0 ? 'text-green-600' : 'text-red-600';
-                const sign = neto >= 0 ? '+' : '';
+                const netoTotal = totalIngresos - b.gastos;
+                const netoYapeSolo = b.yape - b.gastos;
+
+                netosGlobales[nom] = netoTotal;
+                netosYape[nom] = netoYapeSolo;
+
+                const colorTotal = netoTotal >= 0 ? 'text-green-600' : 'text-red-600';
+                const signTotal = netoTotal >= 0 ? '+' : '';
+
+                const colorYape = netoYapeSolo >= 0 ? 'text-purple-700' : 'text-red-600';
+                const signYape = netoYapeSolo >= 0 ? '+' : '';
 
                 html += `
-                <div class="border-b pb-2">
-                    <div class="font-bold text-slate-700">👤 ${nom}:</div>
-                    <div>(+) Total en Yape: S/. ${b.yape.toFixed(2)}</div>
-                    <div>(+) Total en Efectivo: S/. ${b.efectivo.toFixed(2)}</div>
-                    <div>(-) Gastos realizados: S/. ${b.gastos.toFixed(2)}</div>
-                    <div class="font-bold ${color}">👉 GANANCIA NETA: S/. ${sign}${neto.toFixed(2)}</div>
-                    <div class="text-xs text-gray-500">⏳ Fiados por cobrar: S/. ${b.fiado_p.toFixed(2)}</div>
+                <div class="border-b pb-3 pt-2">
+                    <div class="font-bold text-slate-800 text-sm">👤 ${nom}:</div>
+                    <div class="text-xs">📱 Total en Yape: S/. ${b.yape.toFixed(2)}</div>
+                    <div class="text-xs">💵 Total en Efectivo: S/. ${b.efectivo.toFixed(2)}</div>
+                    <div class="text-xs text-orange-700">💸 Gastos realizados: S/. ${b.gastos.toFixed(2)}</div>
+                    
+                    <!-- BALANCE EXCLUSIVO YAPE (SIN EFECTIVO) -->
+                    <div class="bg-purple-50 border border-purple-200 rounded p-1.5 my-1.5 text-xs">
+                        <div class="font-bold ${colorYape}">📱 SALDO NETO EN YAPE (Yape - Gastos): S/. ${signYape}${netoYapeSolo.toFixed(2)}</div>
+                    </div>
+
+                    <div class="font-bold ${colorTotal} text-xs">👉 GANANCIA NETA TOTAL: S/. ${signTotal}${netoTotal.toFixed(2)}</div>
+                    <div class="text-[11px] text-gray-500">⏳ Fiados por cobrar: S/. ${b.fiado_p.toFixed(2)}</div>
                 </div>`;
             });
 
-            html += `<div class="font-bold pt-2 text-slate-800">💰 TOTAL EN CAJA POR DUEÑA:</div>`;
+            html += `<div class="font-bold pt-2 text-slate-800 text-xs">💰 RESUMEN FINAL POR DUEÑA:</div>`;
+            
             ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
-                const n = netos[nom];
-                const color = n >= 0 ? 'text-green-600' : 'text-red-600';
-                const sign = n >= 0 ? '+' : '';
-                html += `<div class="font-bold ${color}">• ${nom}: S/. ${sign}${n.toFixed(2)}</div>`;
+                const nY = netosYape[nom];
+                const colorY = nY >= 0 ? 'text-purple-700' : 'text-red-600';
+                const signY = nY >= 0 ? '+' : '';
+
+                const nT = netosGlobales[nom];
+                const colorT = nT >= 0 ? 'text-green-600' : 'text-red-600';
+                const signT = nT >= 0 ? '+' : '';
+
+                html += `
+                <div class="text-xs py-1 border-b border-gray-100">
+                    <span class="font-bold">👤 ${nom}:</span>
+                    <span class="font-bold ${colorY}">📱 Neto Yape: S/. ${signY}${nY.toFixed(2)}</span> | 
+                    <span class="${colorT}">Total: S/. ${signT}${nT.toFixed(2)}</span>
+                </div>`;
             });
 
             document.getElementById('resultado-reporte').innerHTML = html;
