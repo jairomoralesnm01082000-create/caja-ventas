@@ -21,6 +21,7 @@
             <input type="password" id="input-pin" maxlength="4" placeholder="••••" class="w-full p-3 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-xl focus:border-green-600 focus:outline-none" onkeyup="if(event.key==='Enter') validarPin()">
             <button id="btn-validar-pin" onclick="validarPin()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-95 transition">Ingresar</button>
             <p id="error-pin" class="text-xs text-red-600 font-bold hidden">PIN incorrecto. Intenta de nuevo.</p>
+            <p id="estado-servidor" class="text-xs text-amber-600 font-semibold hidden">⏳ Conectando con el servidor, por favor espera un momento...</p>
         </div>
     </div>
 
@@ -113,7 +114,7 @@
             <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
         </div>
 
-        <!-- 1. VENTA / FIADO (INDIVIDUAL O COMPARTIDO) -->
+        <!-- 1. VENTA / FIADO -->
         <div id="sec-venta" class="space-y-4">
             <label class="block font-bold text-sm">Dueña:</label>
             <div class="grid grid-cols-4 gap-1.5">
@@ -397,21 +398,52 @@
             if (tabActual === 'reporte') calcularGanancias();
         }
 
+        // VALIDACIÓN DE PIN ROBUSTA CON FEEDBACK VISUAL Y MANEJO DE ERRORES
         async function validarPin() {
-            const pin = document.getElementById('input-pin').value;
-            const res = await fetchSinCache('/api/verificar_pin', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ pin })
-            });
-            const data = await res.json();
-            if (data.valido) {
-                document.getElementById('modal-pin').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                document.getElementById('error-pin').classList.add('hidden');
-            } else {
-                document.getElementById('error-pin').classList.remove('hidden');
-                document.getElementById('input-pin').value = '';
+            const inputPin = document.getElementById('input-pin');
+            const btnPin = document.getElementById('btn-validar-pin');
+            const errorPin = document.getElementById('error-pin');
+            const estadoServidor = document.getElementById('estado-servidor');
+            const pin = inputPin.value.trim();
+
+            if (!pin) {
+                errorPin.innerText = 'Ingresa el PIN de 4 dígitos.';
+                errorPin.classList.remove('hidden');
+                return;
+            }
+
+            btnPin.disabled = true;
+            btnPin.innerText = '⏳ Verificando...';
+            errorPin.classList.add('hidden');
+            estadoServidor.classList.remove('hidden');
+
+            try {
+                const res = await fetchSinCache('/api/verificar_pin', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pin })
+                });
+
+                const data = await res.json();
+                estadoServidor.classList.add('hidden');
+
+                if (data.valido) {
+                    vibrarConfirmacion();
+                    document.getElementById('modal-pin').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    errorPin.classList.add('hidden');
+                } else {
+                    errorPin.innerText = 'PIN incorrecto. Intenta de nuevo.';
+                    errorPin.classList.remove('hidden');
+                    inputPin.value = '';
+                }
+            } catch (err) {
+                estadoServidor.classList.add('hidden');
+                errorPin.innerText = 'El servidor está iniciando. Espera 10 segundos y presiona Ingresar nuevamente.';
+                errorPin.classList.remove('hidden');
+            } finally {
+                btnPin.disabled = false;
+                btnPin.innerText = 'Ingresar';
             }
         }
 
@@ -419,6 +451,7 @@
             document.getElementById('modal-pin').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('input-pin').value = '';
+            document.getElementById('error-pin').classList.add('hidden');
         }
 
         function cambiarTab(tab) {
@@ -470,7 +503,7 @@
         function seleccionarMetodo(m) {
             metodoV = m;
             document.getElementById('btn-metodo-yape').className = (m === 'Yape') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
-            document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
+            document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
             
             const lbl = document.getElementById('lbl-cliente-v');
             if (m === 'Fiado') {
@@ -625,7 +658,6 @@
             filtrarFiados();
         }
 
-        // RENDERIZADO VISUAL CON NOMBRE DE CLIENTE RESALTADO EN GRANDE
         function filtrarFiados() {
             const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
             const cont = document.getElementById('lista-fiados');
@@ -655,12 +687,10 @@
                 cont.innerHTML += `
                 <div class="border p-3 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center bg-white shadow-sm gap-2 hover:shadow-md transition">
                     <div>
-                        <!-- NOMBRE DEL CLIENTE RESALTADO EN GRANDE Y MONTO EN ROJO -->
                         <div class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
                             <span>👤 ${nombreCliente}</span>
                             <span class="text-red-600 font-black">- S/. ${f.monto.toFixed(2)}</span>
                         </div>
-                        <!-- DUEÑA CORRESPONDIENTE EN LÍNEA SECUNDARIA -->
                         <div class="text-xs font-bold text-indigo-700 mt-0.5">Dueña: ${f.dueno}</div>
                         ${f.descripcion ? `<div class="text-xs text-gray-600 italic">Prod: ${f.descripcion}</div>` : ''}
                         <div class="text-[11px] text-gray-400">🕒 ${horaLegible}</div>
