@@ -23,6 +23,18 @@
         </div>
     </div>
 
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
+    <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-base text-slate-800">📄 Detalle de Transacción</h3>
+                <button onclick="cerrarDetalle()" class="text-gray-400 hover:text-gray-700 font-bold text-lg">&times;</button>
+            </div>
+            <div id="contenido-detalle" class="text-xs space-y-2 text-gray-700"></div>
+            <button onclick="cerrarDetalle()" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-slate-900">Cerrar</button>
+        </div>
+    </div>
+
     <!-- CONTENEDOR PRINCIPAL DE LA APP -->
     <div id="app-container" class="max-w-lg mx-auto bg-white min-h-screen shadow-lg p-4 hidden">
         <div class="flex justify-between items-center mb-4">
@@ -64,14 +76,23 @@
                 </button>
             </div>
 
+            <!-- DESCRIPCIÓN OPCIONAL PARA YAPE -->
+            <div id="campos-yape" class="space-y-3">
+                <div>
+                    <label class="block font-bold text-sm mb-1">Descripción / Producto (Opcional):</label>
+                    <input type="text" id="desc-yape" placeholder="Ej: Gaseosa 1.5L, Pan, etc." class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <!-- CAMPOS PARA FIADO -->
             <div id="campos-fiado" class="space-y-3 hidden">
                 <div>
                     <label class="block font-bold text-sm mb-1">Nombre del Cliente:</label>
-                    <input type="text" id="cliente-fiado" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="cliente-fiado" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                 </div>
                 <div>
                     <label class="block font-bold text-sm mb-1">Descripción del Fiado:</label>
-                    <input type="text" id="desc-fiado" placeholder="¿Qué producto llevó?" class="w-full p-2 border border-gray-300 rounded-lg">
+                    <input type="text" id="desc-fiado" placeholder="¿Qué producto llevó?" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                 </div>
             </div>
 
@@ -94,7 +115,7 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Motivo del Gasto:</label>
-                <input type="text" id="motivo-g" placeholder="Ej: Bolsas, pasajes, compras" class="w-full p-2 border border-gray-300 rounded-lg">
+                <input type="text" id="motivo-g" placeholder="Ej: Bolsas, pasajes, compras" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
             </div>
 
             <div>
@@ -151,7 +172,7 @@
 
         <!-- 5. HISTORIAL -->
         <div id="sec-historial" class="space-y-3 hidden">
-            <h2 class="font-bold text-sm text-gray-700">Historial completo:</h2>
+            <h2 class="font-bold text-sm text-gray-700">Historial completo (haz clic en uno para ver detalles):</h2>
             <div id="lista-historial" class="space-y-2"></div>
         </div>
     </div>
@@ -161,8 +182,8 @@
         let duenoG = 'BERTHA';
         let metodoV = 'Yape';
         let fiadosGlobales = [];
+        let datosCompletosGlobales = [];
 
-        // FUNCIÓN DE FECHA LOCAL EXACTA
         function setFechaHoy() {
             const fechaLocal = new Date();
             const año = fechaLocal.getFullYear();
@@ -177,7 +198,6 @@
         }
         setFechaHoy();
 
-        // VALIDACIÓN DE PIN
         async function validarPin() {
             const pin = document.getElementById('input-pin').value;
             const res = await fetch('/api/verificar_pin', {
@@ -236,6 +256,8 @@
             metodoV = m;
             document.getElementById('btn-metodo-yape').className = (m === 'Yape') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
             document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
+            
+            document.getElementById('campos-yape').classList.toggle('hidden', m !== 'Yape');
             document.getElementById('campos-fiado').classList.toggle('hidden', m !== 'Fiado');
         }
 
@@ -243,19 +265,24 @@
             const monto = document.getElementById('monto-v').value;
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
             
+            const descripcionFinal = (metodoV === 'Yape') 
+                ? document.getElementById('desc-yape').value 
+                : document.getElementById('desc-fiado').value;
+
             const payload = {
                 tipo: 'Ingreso',
                 dueno: duenoV,
                 monto: monto,
                 metodo: metodoV,
-                cliente: document.getElementById('cliente-fiado').value,
-                descripcion: document.getElementById('desc-fiado').value,
+                cliente: (metodoV === 'Fiado') ? document.getElementById('cliente-fiado').value : '',
+                descripcion: descripcionFinal,
                 fecha: document.getElementById('fecha-v').value
             };
 
             await fetch('/api/registrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            alert('✅ Venta registrada correctamente');
+            alert('✅ Registro guardado correctamente');
             document.getElementById('monto-v').value = '';
+            document.getElementById('desc-yape').value = '';
             document.getElementById('cliente-fiado').value = '';
             document.getElementById('desc-fiado').value = '';
             setFechaHoy();
@@ -326,20 +353,78 @@
         async function cargarHistorial() {
             const res = await fetch('/api/datos');
             const datos = await res.json();
+            datosCompletosGlobales = datos;
             const cont = document.getElementById('lista-historial');
             cont.innerHTML = '';
 
             datos.slice().reverse().forEach(d => {
-                let info = d.tipo === 'Ingreso' 
-                    ? `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | Venta (${d.metodo}): S/. ${d.monto.toFixed(2)}`
-                    : `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | 💸 Gasto: S/. ${d.monto.toFixed(2)} (${d.motivo})`;
+                let badge = '';
+                let bgCard = 'bg-white';
+                let info = '';
+
+                if (d.tipo === 'Ingreso') {
+                    if (d.metodo === 'Yape') {
+                        badge = '<span class="text-purple-700 font-bold">[Yape]</span>';
+                    } else if (d.metodo === 'Fiado') {
+                        if (d.cobrado) {
+                            badge = '<span class="text-emerald-700 font-bold">[Fiado Cobrado ✅]</span>';
+                            bgCard = 'bg-emerald-50 border-emerald-300';
+                        } else {
+                            badge = '<span class="text-amber-700 font-bold">[Fiado Pendiente ⏳]</span>';
+                            bgCard = 'bg-amber-50 border-amber-200';
+                        }
+                    }
+                    info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
+                } else {
+                    badge = '<span class="text-orange-700 font-bold">[Gasto 💸]</span>';
+                    info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
+                }
 
                 cont.innerHTML += `
-                <div class="border p-2.5 rounded-lg flex justify-between items-center bg-white text-xs shadow-sm">
-                    <span class="pr-2">${info}</span>
-                    <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded">🗑️</button>
+                <div class="border p-2.5 rounded-lg flex justify-between items-center ${bgCard} text-xs shadow-sm cursor-pointer hover:shadow-md transition">
+                    <div class="flex-1 pr-2" onclick="verDetalle(${d.id})">
+                        <div>${info}</div>
+                        ${d.cliente ? `<div class="text-gray-500 font-semibold">Cliente: ${d.cliente}</div>` : ''}
+                        ${d.descripcion ? `<div class="text-gray-500 italic">Prod: ${d.descripcion}</div>` : ''}
+                        ${d.motivo ? `<div class="text-gray-500 italic">Motivo: ${d.motivo}</div>` : ''}
+                    </div>
+                    <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded hover:bg-red-700">🗑️</button>
                 </div>`;
             });
+        }
+
+        function verDetalle(id) {
+            const item = datosCompletosGlobales.find(d => d.id === id);
+            if (!item) return;
+
+            let html = `
+                <div class="bg-gray-50 p-2 rounded border space-y-1">
+                    <div><b>ID de Registro:</b> #${item.id}</div>
+                    <div><b>Fecha:</b> ${item.fecha.slice(0, 10)}</div>
+                    <div><b>Dueña:</b> 👤 ${item.dueno}</div>
+                    <div><b>Tipo:</b> ${item.tipo}</div>
+                    <div><b>Monto:</b> <span class="text-sm font-bold text-green-700">S/. ${item.monto.toFixed(2)}</span></div>
+            `;
+
+            if (item.tipo === 'Ingreso') {
+                html += `<div><b>Método de Pago:</b> ${item.metodo}</div>`;
+                if (item.cliente) html += `<div><b>Cliente:</b> ${item.cliente}</div>`;
+                if (item.descripcion) html += `<div><b>Descripción / Producto:</b> ${item.descripcion}</div>`;
+                if (item.metodo === 'Fiado') {
+                    html += `<div><b>Estado:</b> ${item.cobrado ? '✅ Cobrado por Yape' : '⏳ Pendiente de cobro'}</div>`;
+                    if (item.fecha_cobro) html += `<div><b>Fecha de cobro:</b> ${item.fecha_cobro}</div>`;
+                }
+            } else {
+                html += `<div><b>Motivo del Gasto:</b> ${item.motivo}</div>`;
+            }
+
+            html += `</div>`;
+            document.getElementById('contenido-detalle').innerHTML = html;
+            document.getElementById('modal-detalle').classList.remove('hidden');
+        }
+
+        function cerrarDetalle() {
+            document.getElementById('modal-detalle').classList.add('hidden');
         }
 
         async function eliminar(id) {
