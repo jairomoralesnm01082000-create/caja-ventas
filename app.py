@@ -84,7 +84,7 @@ def registrar_operacion():
     payload = request.json
     tipo = payload.get("tipo")
     dueno = payload.get("dueno")
-    monto = float(payload.get("monto", 0))
+    monto = round(float(payload.get("monto", 0)), 2)
     fecha = payload.get(
         "fecha", datetime.datetime.now().strftime(FORMATO_FECHA)
     )
@@ -101,6 +101,7 @@ def registrar_operacion():
             "tipo": "Ingreso",
             "dueno": dueno,
             "monto": monto,
+            "monto_original": monto,
             "metodo": metodo,
             "cliente": cliente,
             "descripcion": descripcion,
@@ -126,13 +127,38 @@ def registrar_operacion():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/editar", methods=["POST"])
+def editar_registro():
+    """Permite editar monto, cliente, motivo o descripción de una transacción."""
+    payload = request.json
+    registro_id = int(payload.get("id"))
+    nuevo_monto = round(float(payload.get("monto", 0)), 2)
+    nuevo_dueno = payload.get("dueno")
+    nuevo_detalle = payload.get("detalle", "").strip()
+    nueva_desc = payload.get("descripcion", "").strip()
+
+    datos = cargar_datos()
+    for d in datos:
+        if d.get("id") == registro_id:
+            d["monto"] = nuevo_monto
+            d["dueno"] = nuevo_dueno
+            if d.get("tipo") == "Ingreso":
+                d["cliente"] = nuevo_detalle
+                d["descripcion"] = nueva_desc
+            else:
+                d["motivo"] = nuevo_detalle
+            break
+
+    guardar_datos(datos)
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/cobrar_fiado", methods=["POST"])
 def cobrar_fiado():
     payload = request.json
     fiado_id = int(payload.get("id"))
     metodo_cobro = payload.get("metodo_cobro", "Yape")
 
-    # Lectura fresca en tiempo real
     datos = cargar_datos()
     for d in datos:
         if d.get("id") == fiado_id:
@@ -147,13 +173,63 @@ def cobrar_fiado():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/abonar_fiado", methods=["POST"])
+def abonar_fiado():
+    """Registra un abono parcial a un fiado."""
+    payload = request.json
+    fiado_id = int(payload.get("id"))
+    monto_abono = round(float(payload.get("monto_abono", 0)), 2)
+    metodo_cobro = payload.get("metodo_cobro", "Yape")
+    fecha_actual = datetime.datetime.now().strftime(FORMATO_FECHA)
+
+    datos = cargar_datos()
+    fiado_obj = next((d for d in datos if d.get("id") == fiado_id), None)
+
+    if fiado_obj and monto_abono > 0:
+        nuevo_id = max([d.get("id", 0) for d in datos], default=0) + 1
+
+        # Si el abono cubre toda la deuda restante
+        if monto_abono >= fiado_obj["monto"]:
+            monto_real_abonado = fiado_obj["monto"]
+            fiado_obj["cobrado"] = True
+            fiado_obj["metodo_cobro"] = metodo_cobro
+            fiado_obj["fecha_cobro"] = datetime.datetime.now().strftime(
+                FORMATO_FECHA_HORA
+            )
+        else:
+            monto_real_abonado = monto_abono
+            fiado_obj["monto"] = round(
+                fiado_obj["monto"] - monto_real_abonado, 2
+            )
+
+            # Creamos un ingreso por el abono recibido
+            registro_abono = {
+                "id": nuevo_id,
+                "tipo": "Ingreso",
+                "dueno": fiado_obj["dueno"],
+                "monto": monto_real_abonado,
+                "metodo": metodo_cobro,
+                "cliente": fiado_obj.get("cliente", ""),
+                "descripcion": f"Abono a fiado #{fiado_id} ({fiado_obj.get('descripcion', '')})",
+                "fecha": f"{fecha_actual} 12:00:00",
+                "cobrado": True,
+                "metodo_cobro": metodo_cobro,
+                "eliminado": False,
+            }
+            datos.append(registro_abono)
+
+        guardar_datos(datos)
+        return jsonify({"status": "ok"})
+
+    return jsonify({"status": "error", "mensaje": "Monto de abono inválido"})
+
+
 @app.route("/api/deshacer_cobro", methods=["POST"])
 def deshacer_cobro():
     payload = request.json
     fiado_id = int(payload.get("id"))
-
-    # Lectura fresca en tiempo real
     datos = cargar_datos()
+
     for d in datos:
         if d.get("id") == fiado_id:
             d["cobrado"] = False
@@ -169,9 +245,8 @@ def deshacer_cobro():
 def eliminar_registro():
     payload = request.json
     registro_id = int(payload.get("id"))
-
-    # Lectura fresca en tiempo real
     datos = cargar_datos()
+
     for d in datos:
         if d.get("id") == registro_id:
             d["eliminado"] = True
@@ -188,9 +263,8 @@ def eliminar_registro():
 def restaurar_registro():
     payload = request.json
     registro_id = int(payload.get("id"))
-
-    # Lectura fresca en tiempo real
     datos = cargar_datos()
+
     for d in datos:
         if d.get("id") == registro_id:
             d["eliminado"] = False
@@ -199,6 +273,21 @@ def restaurar_registro():
 
     guardar_datos(datos)
     return jsonify({"status": "ok"})
+
+
+@app.route("/api/backup_json", methods=["GET"])
+def backup_json():
+    """Descarga una copia completa en JSON de toda la base de datos de Firebase."""
+    datos = cargar_datos()
+    fecha_hoy = datetime.datetime.now().strftime(FORMATO_FECHA)
+    salida = json.dumps(datos, indent=4, ensure_ascii=False)
+    return Response(
+        salida,
+        mimetype="application/json",
+        headers={
+            "Content-Disposition": f"attachment;filename=backup_caja_{fecha_hoy}.json"
+        },
+    )
 
 
 @app.route("/api/exportar_csv", methods=["GET"])
