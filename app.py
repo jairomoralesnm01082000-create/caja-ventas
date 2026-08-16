@@ -145,6 +145,24 @@ def cobrar_fiado():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/deshacer_cobro", methods=["POST"])
+def deshacer_cobro():
+    """Revierte un fiado cobrado a su estado original de pendiente de pago."""
+    payload = request.json
+    fiado_id = int(payload.get("id"))
+    datos = cargar_datos()
+
+    for d in datos:
+        if d.get("id") == fiado_id:
+            d["cobrado"] = False
+            d["metodo_cobro"] = None
+            d["fecha_cobro"] = None
+            break
+
+    guardar_datos(datos)
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/eliminar", methods=["POST"])
 def eliminar_registro():
     payload = request.json
