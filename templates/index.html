@@ -113,26 +113,69 @@
             <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
         </div>
 
-        <!-- 1. VENTA / FIADO -->
+        <!-- 1. VENTA / FIADO (INDIVIDUAL O COMPARTIDO) -->
         <div id="sec-venta" class="space-y-4">
             <label class="block font-bold text-sm">Dueña:</label>
-            <div class="grid grid-cols-3 gap-2">
-                <button type="button" onclick="seleccionarDuenoV('BERTHA')" id="btn-v-BERTHA" class="p-2 border-2 rounded-lg font-bold text-sm text-center selected-border">👤 BERTHA</button>
-                <button type="button" onclick="seleccionarDuenoV('KARLA')" id="btn-v-KARLA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 KARLA</button>
-                <button type="button" onclick="seleccionarDuenoV('CARLITA')" id="btn-v-CARLITA" class="p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300">👤 CARLITA</button>
+            <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" onclick="seleccionarDuenoV('BERTHA')" id="btn-v-BERTHA" class="p-2 border-2 rounded-lg font-bold text-xs text-center selected-border">👤 BERTHA</button>
+                <button type="button" onclick="seleccionarDuenoV('KARLA')" id="btn-v-KARLA" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-gray-300">👤 KARLA</button>
+                <button type="button" onclick="seleccionarDuenoV('CARLITA')" id="btn-v-CARLITA" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-gray-300">👤 CARLITA</button>
+                <button type="button" onclick="seleccionarDuenoV('COMPARTIDO')" id="btn-v-COMPARTIDO" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-indigo-400 bg-indigo-50 text-indigo-800">👥 REPARTIR</button>
             </div>
 
-            <div>
-                <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
-                <input type="number" step="0.10" id="monto-v" placeholder="0.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-xl font-bold">
-                <!-- Botones de Montos Rápidos -->
-                <div class="grid grid-cols-6 gap-1.5 mt-2 text-xs font-bold">
-                    <button type="button" onclick="sumarMontoRapido('v', 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+1</button>
-                    <button type="button" onclick="sumarMontoRapido('v', 2)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+2</button>
-                    <button type="button" onclick="sumarMontoRapido('v', 5)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+5</button>
-                    <button type="button" onclick="sumarMontoRapido('v', 10)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+10</button>
-                    <button type="button" onclick="sumarMontoRapido('v', 20)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+20</button>
-                    <button type="button" onclick="limpiarMontoRapido('v')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 border rounded">C</button>
+            <!-- VISTA INDIVIDUAL (UNA SOLA DUEÑA) -->
+            <div id="box-venta-individual" class="space-y-3">
+                <div>
+                    <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
+                    <input type="number" step="0.10" id="monto-v" placeholder="0.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-xl font-bold">
+                    <div class="grid grid-cols-6 gap-1.5 mt-2 text-xs font-bold">
+                        <button type="button" onclick="sumarMontoRapido('v', 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+1</button>
+                        <button type="button" onclick="sumarMontoRapido('v', 2)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+2</button>
+                        <button type="button" onclick="sumarMontoRapido('v', 5)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+5</button>
+                        <button type="button" onclick="sumarMontoRapido('v', 10)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+10</button>
+                        <button type="button" onclick="sumarMontoRapido('v', 20)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+20</button>
+                        <button type="button" onclick="limpiarMontoRapido('v')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 border rounded">C</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-sm mb-1">Descripción / Producto (Opcional):</label>
+                    <input type="text" id="desc-v" placeholder="Ej: Gaseosa 1.5L, Pan, Shampoo" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <!-- VISTA COMPARTIDA (REPARTICIÓN ENTRE DUEÑAS) -->
+            <div id="box-venta-compartida" class="space-y-3 hidden bg-indigo-50 border border-indigo-200 p-3 rounded-xl">
+                <div class="text-xs font-bold text-indigo-900 border-b border-indigo-200 pb-1 flex justify-between items-center">
+                    <span>🔀 Distribución por Dueña:</span>
+                    <span id="total-compartido-badge" class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[11px]">Total: S/. 0.00</span>
+                </div>
+
+                <!-- Fila Bertha -->
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-gray-700">👤 BERTHA:</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <input type="number" step="0.10" id="comp-monto-BERTHA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
+                        <input type="text" id="comp-desc-BERTHA" placeholder="Producto de Bertha" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- Fila Karla -->
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-gray-700">👤 KARLA:</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <input type="number" step="0.10" id="comp-monto-KARLA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
+                        <input type="text" id="comp-desc-KARLA" placeholder="Producto de Karla" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                    </div>
+                </div>
+
+                <!-- Fila Carlita -->
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-gray-700">👤 CARLITA:</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <input type="number" step="0.10" id="comp-monto-CARLITA" oninput="calcularTotalCompartido()" placeholder="S/. 0.00" class="p-2 border rounded-lg text-sm font-bold bg-white">
+                        <input type="text" id="comp-desc-CARLITA" placeholder="Producto de Carlita" class="col-span-2 p-2 border rounded-lg text-xs bg-white">
+                    </div>
                 </div>
             </div>
 
@@ -147,16 +190,10 @@
                 </button>
             </div>
 
-            <!-- CAMPOS COMUNES DE CLIENTE Y PRODUCTO -->
-            <div class="space-y-3">
-                <div>
-                    <label id="lbl-cliente-v" class="block font-bold text-sm mb-1">Nombre del Cliente (Opcional):</label>
-                    <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                </div>
-                <div>
-                    <label class="block font-bold text-sm mb-1">Descripción / Producto (Opcional):</label>
-                    <input type="text" id="desc-v" placeholder="Ej: Gaseosa 1.5L, Pan, Shampoo" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                </div>
+            <!-- CLIENTE COMÚN -->
+            <div>
+                <label id="lbl-cliente-v" class="block font-bold text-sm mb-1">Nombre del Cliente (Opcional):</label>
+                <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
             </div>
 
             <div>
@@ -184,7 +221,6 @@
             <div>
                 <label class="block font-bold text-sm mb-1">Monto Gastado (S/.):</label>
                 <input type="number" step="0.10" id="monto-g" placeholder="0.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-xl font-bold">
-                <!-- Botones de Montos Rápidos -->
                 <div class="grid grid-cols-6 gap-1.5 mt-2 text-xs font-bold">
                     <button type="button" onclick="sumarMontoRapido('g', 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+1</button>
                     <button type="button" onclick="sumarMontoRapido('g', 2)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+2</button>
@@ -254,7 +290,6 @@
                 </button>
             </div>
 
-            <!-- Filtros por dueña -->
             <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
                 <button onclick="filtrarDuenoHistorial('TODAS')" id="filtro-h-TODAS" class="p-1.5 rounded border border-gray-300 filter-active">TODAS</button>
                 <button onclick="filtrarDuenoHistorial('BERTHA')" id="filtro-h-BERTHA" class="p-1.5 rounded border border-gray-300 bg-white">BERTHA</button>
@@ -316,6 +351,14 @@
 
         function limpiarMontoRapido(tipo) {
             document.getElementById(`monto-${tipo}`).value = '';
+        }
+
+        function calcularTotalCompartido() {
+            const mB = parseFloat(document.getElementById('comp-monto-BERTHA').value) || 0;
+            const mK = parseFloat(document.getElementById('comp-monto-KARLA').value) || 0;
+            const mC = parseFloat(document.getElementById('comp-monto-CARLITA').value) || 0;
+            const total = mB + mK + mC;
+            document.getElementById('total-compartido-badge').innerText = `Total: S/. ${total.toFixed(2)}`;
         }
 
         async function fetchSinCache(url, opciones = {}) {
@@ -393,10 +436,20 @@
 
         function seleccionarDuenoV(d) {
             duenoV = d;
-            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+            ['BERTHA', 'KARLA', 'CARLITA', 'COMPARTIDO'].forEach(nom => {
                 const btn = document.getElementById(`btn-v-${nom}`);
-                btn.className = (nom === d) ? 'p-2 border-2 rounded-lg font-bold text-sm text-center selected-border' : 'p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300';
+                if (nom === d) {
+                    btn.className = 'p-2 border-2 rounded-lg font-bold text-xs text-center selected-border';
+                } else if (nom === 'COMPARTIDO') {
+                    btn.className = 'p-2 border-2 rounded-lg font-bold text-xs text-center border-indigo-300 bg-indigo-50 text-indigo-700';
+                } else {
+                    btn.className = 'p-2 border-2 rounded-lg font-bold text-xs text-center border-gray-300';
+                }
             });
+
+            const esCompartido = (d === 'COMPARTIDO');
+            document.getElementById('box-venta-individual').classList.toggle('hidden', esCompartido);
+            document.getElementById('box-venta-compartida').classList.toggle('hidden', !esCompartido);
             setFechaHoy();
         }
 
@@ -424,21 +477,70 @@
 
         async function guardarVenta() {
             const btn = document.getElementById('btn-guardar-venta');
+            const fechaSeleccionada = document.getElementById('fecha-v').value;
+            const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
+            const clienteVal = document.getElementById('cliente-v').value;
+
+            if (duenoV === 'COMPARTIDO') {
+                const mB = parseFloat(document.getElementById('comp-monto-BERTHA').value) || 0;
+                const mK = parseFloat(document.getElementById('comp-monto-KARLA').value) || 0;
+                const mC = parseFloat(document.getElementById('comp-monto-CARLITA').value) || 0;
+                const total = mB + mK + mC;
+
+                if (total <= 0) return alert('Debes ingresar al menos un monto para repartir.');
+
+                btn.disabled = true;
+                btn.innerText = '⏳ Guardando venta compartida...';
+
+                const distribuciones = [
+                    { dueno: 'BERTHA', monto: mB, descripcion: document.getElementById('comp-desc-BERTHA').value },
+                    { dueno: 'KARLA', monto: mK, descripcion: document.getElementById('comp-desc-KARLA').value },
+                    { dueno: 'CARLITA', monto: mC, descripcion: document.getElementById('comp-desc-CARLITA').value }
+                ];
+
+                await fetchSinCache('/api/registrar_compartido', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        distribuciones: distribuciones,
+                        metodo: metodoV,
+                        cliente: clienteVal,
+                        fecha_hora: fechaHoraCompleta
+                    })
+                });
+
+                vibrarConfirmacion();
+                alert(`✅ Venta compartida de S/. ${total.toFixed(2)} registrada con éxito.`);
+
+                // Limpiar campos compartidos
+                document.getElementById('comp-monto-BERTHA').value = '';
+                document.getElementById('comp-desc-BERTHA').value = '';
+                document.getElementById('comp-monto-KARLA').value = '';
+                document.getElementById('comp-desc-KARLA').value = '';
+                document.getElementById('comp-monto-CARLITA').value = '';
+                document.getElementById('comp-desc-CARLITA').value = '';
+                document.getElementById('cliente-v').value = '';
+                calcularTotalCompartido();
+
+                btn.disabled = false;
+                btn.innerText = '💾 Guardar Venta / Fiado';
+                setFechaHoy();
+                return;
+            }
+
+            // Registro individual tradicional
             const monto = parseFloat(document.getElementById('monto-v').value);
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
             
             btn.disabled = true;
             btn.innerText = '⏳ Guardando...';
 
-            const fechaSeleccionada = document.getElementById('fecha-v').value;
-            const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
-
             const payload = {
                 tipo: 'Ingreso',
                 dueno: duenoV,
                 monto: monto,
                 metodo: metodoV,
-                cliente: document.getElementById('cliente-v').value,
+                cliente: clienteVal,
                 descripcion: document.getElementById('desc-v').value,
                 fecha_hora: fechaHoraCompleta
             };
@@ -690,7 +792,6 @@
                 let info = '';
                 let esFiadoCobrado = false;
 
-                // Formatear fecha y hora para la vista
                 const fechaHoraLegible = (d.fecha && d.fecha.length >= 16) ? d.fecha.slice(0, 16) : d.fecha;
 
                 if (d.tipo === 'Ingreso') {
