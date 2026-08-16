@@ -23,7 +23,7 @@ FORMATO_FECHA_HORA = "%Y-%m-%d %H:%M:%S"
 # GESTIÓN DE DATOS EN LA NUBE (FIREBASE)
 # ==========================================
 def cargar_datos():
-    """Lee las transacciones desde Firebase Realtime Database."""
+    """Lee las transacciones más recientes directamente desde Firebase."""
     try:
         req = urllib.request.Request(f"{FIREBASE_URL}/transacciones.json")
         with urllib.request.urlopen(req, timeout=5) as response:
@@ -42,7 +42,7 @@ def cargar_datos():
 
 
 def guardar_datos(datos):
-    """Guarda las transacciones en Firebase permanentemente."""
+    """Guarda las transacciones en Firebase de forma permanente."""
     try:
         data_json = json.dumps(datos).encode("utf-8")
         req = urllib.request.Request(
@@ -131,8 +131,9 @@ def cobrar_fiado():
     payload = request.json
     fiado_id = int(payload.get("id"))
     metodo_cobro = payload.get("metodo_cobro", "Yape")
-    datos = cargar_datos()
 
+    # Lectura fresca en tiempo real
+    datos = cargar_datos()
     for d in datos:
         if d.get("id") == fiado_id:
             d["cobrado"] = True
@@ -150,8 +151,9 @@ def cobrar_fiado():
 def deshacer_cobro():
     payload = request.json
     fiado_id = int(payload.get("id"))
-    datos = cargar_datos()
 
+    # Lectura fresca en tiempo real
+    datos = cargar_datos()
     for d in datos:
         if d.get("id") == fiado_id:
             d["cobrado"] = False
@@ -165,11 +167,11 @@ def deshacer_cobro():
 
 @app.route("/api/eliminar", methods=["POST"])
 def eliminar_registro():
-    """Mueve el registro a la papelera (Borrado lógico) para poder restaurarlo."""
     payload = request.json
     registro_id = int(payload.get("id"))
-    datos = cargar_datos()
 
+    # Lectura fresca en tiempo real
+    datos = cargar_datos()
     for d in datos:
         if d.get("id") == registro_id:
             d["eliminado"] = True
@@ -184,11 +186,11 @@ def eliminar_registro():
 
 @app.route("/api/restaurar", methods=["POST"])
 def restaurar_registro():
-    """Restaura un registro eliminado de la papelera."""
     payload = request.json
     registro_id = int(payload.get("id"))
-    datos = cargar_datos()
 
+    # Lectura fresca en tiempo real
+    datos = cargar_datos()
     for d in datos:
         if d.get("id") == registro_id:
             d["eliminado"] = False
@@ -230,7 +232,7 @@ def exportar_csv():
 
     for d in datos:
         if d.get("eliminado", False):
-            continue  # No exportar registros eliminados
+            continue
 
         f = d.get("fecha", "")[:10]
         if desde <= f <= hasta:
