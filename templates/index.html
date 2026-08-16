@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS Y HORAS -->
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
             <div class="flex justify-between items-center border-b pb-2">
@@ -113,17 +113,17 @@
             <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
         </div>
 
-        <!-- 1. VENTA / FIADO (INDIVIDUAL O COMPARTIDO) -->
+        <!-- 1. VENTA / FIADO -->
         <div id="sec-venta" class="space-y-4">
             <label class="block font-bold text-sm">Dueña:</label>
             <div class="grid grid-cols-4 gap-1.5">
                 <button type="button" onclick="seleccionarDuenoV('BERTHA')" id="btn-v-BERTHA" class="p-2 border-2 rounded-lg font-bold text-xs text-center selected-border">👤 BERTHA</button>
                 <button type="button" onclick="seleccionarDuenoV('KARLA')" id="btn-v-KARLA" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-gray-300">👤 KARLA</button>
                 <button type="button" onclick="seleccionarDuenoV('CARLITA')" id="btn-v-CARLITA" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-gray-300">👤 CARLITA</button>
-                <button type="button" onclick="seleccionarDuenoV('COMPARTIDO')" id="btn-v-COMPARTIDO" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-indigo-400 bg-indigo-50 text-indigo-800">👥 REPARTIR</button>
+                <button type="button" onclick="seleccionarDuenoV('COMPARTIDO')" id="btn-v-COMPARTIDO" class="p-2 border-2 rounded-lg font-bold text-xs text-center border-indigo-300 bg-indigo-50 text-indigo-700">👥 REPARTIR</button>
             </div>
 
-            <!-- VISTA INDIVIDUAL (UNA SOLA DUEÑA) -->
+            <!-- VISTA INDIVIDUAL -->
             <div id="box-venta-individual" class="space-y-3">
                 <div>
                     <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
@@ -144,14 +144,13 @@
                 </div>
             </div>
 
-            <!-- VISTA COMPARTIDA (REPARTICIÓN ENTRE DUEÑAS) -->
+            <!-- VISTA COMPARTIDA -->
             <div id="box-venta-compartida" class="space-y-3 hidden bg-indigo-50 border border-indigo-200 p-3 rounded-xl">
                 <div class="text-xs font-bold text-indigo-900 border-b border-indigo-200 pb-1 flex justify-between items-center">
                     <span>🔀 Distribución por Dueña:</span>
                     <span id="total-compartido-badge" class="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[11px]">Total: S/. 0.00</span>
                 </div>
 
-                <!-- Fila Bertha -->
                 <div class="space-y-1">
                     <span class="text-xs font-bold text-gray-700">👤 BERTHA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
@@ -160,7 +159,6 @@
                     </div>
                 </div>
 
-                <!-- Fila Karla -->
                 <div class="space-y-1">
                     <span class="text-xs font-bold text-gray-700">👤 KARLA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
@@ -169,7 +167,6 @@
                     </div>
                 </div>
 
-                <!-- Fila Carlita -->
                 <div class="space-y-1">
                     <span class="text-xs font-bold text-gray-700">👤 CARLITA:</span>
                     <div class="grid grid-cols-3 gap-1.5">
@@ -190,7 +187,6 @@
                 </button>
             </div>
 
-            <!-- CLIENTE COMÚN -->
             <div>
                 <label id="lbl-cliente-v" class="block font-bold text-sm mb-1">Nombre del Cliente (Opcional):</label>
                 <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
@@ -239,15 +235,24 @@
             <button id="btn-guardar-gasto" onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
         </div>
 
-        <!-- 3. COBRAR FIADOS -->
-        <div id="sec-fiados" class="space-y-4 hidden">
+        <!-- 3. COBRAR FIADOS CON FILTROS POR DUEÑA -->
+        <div id="sec-fiados" class="space-y-3 hidden">
+            <!-- Botones de filtro por Dueña -->
+            <label class="block font-bold text-xs text-gray-700">Filtrar fiados por dueña:</label>
+            <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
+                <button onclick="filtrarDuenoFiados('TODAS')" id="filtro-f-TODAS" class="p-2 rounded-lg border border-gray-300 filter-active shadow-sm">TODAS</button>
+                <button onclick="filtrarDuenoFiados('BERTHA')" id="filtro-f-BERTHA" class="p-2 rounded-lg border border-gray-300 bg-white shadow-sm">BERTHA</button>
+                <button onclick="filtrarDuenoFiados('KARLA')" id="filtro-f-KARLA" class="p-2 rounded-lg border border-gray-300 bg-white shadow-sm">KARLA</button>
+                <button onclick="filtrarDuenoFiados('CARLITA')" id="filtro-f-CARLITA" class="p-2 rounded-lg border border-gray-300 bg-white shadow-sm">CARLITA</button>
+            </div>
+
             <div>
                 <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
                 <input type="text" id="buscar-fiador" oninput="filtrarFiados()" placeholder="Escribe el nombre del cliente..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none">
             </div>
 
             <div id="box-total-deuda" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
-                <span class="text-xs font-bold text-amber-800">Deuda total pendiente:</span>
+                <span id="label-total-deuda" class="text-xs font-bold text-amber-800">Deuda total pendiente:</span>
                 <span id="total-deuda-texto" class="text-base font-bold text-amber-900">S/. 0.00</span>
             </div>
 
@@ -310,6 +315,7 @@
         let viendoPapelera = false;
         let tabActual = 'venta';
         let filtroDuenoActual = 'TODAS';
+        let filtroDuenoFiadosActual = 'TODAS';
         let fiadoAbonoSeleccionado = null;
         let textoWhatsAppGlobal = '';
 
@@ -512,7 +518,6 @@
                 vibrarConfirmacion();
                 alert(`✅ Venta compartida de S/. ${total.toFixed(2)} registrada con éxito.`);
 
-                // Limpiar campos compartidos
                 document.getElementById('comp-monto-BERTHA').value = '';
                 document.getElementById('comp-desc-BERTHA').value = '';
                 document.getElementById('comp-monto-KARLA').value = '';
@@ -528,7 +533,6 @@
                 return;
             }
 
-            // Registro individual tradicional
             const monto = parseFloat(document.getElementById('monto-v').value);
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
             
@@ -611,12 +615,31 @@
             filtrarFiados();
         }
 
+        function filtrarDuenoFiados(dueno) {
+            filtroDuenoFiadosActual = dueno;
+            ['TODAS', 'BERTHA', 'KARLA', 'CARLITA'].forEach(d => {
+                const btn = document.getElementById(`filtro-f-${d}`);
+                btn.className = (d === dueno) 
+                    ? 'p-2 rounded-lg border border-gray-300 filter-active shadow-sm font-bold' 
+                    : 'p-2 rounded-lg border border-gray-300 bg-white shadow-sm font-bold';
+            });
+            filtrarFiados();
+        }
+
         function filtrarFiados() {
             const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
             const cont = document.getElementById('lista-fiados');
             cont.innerHTML = '';
 
-            const filtrados = fiadosGlobales.filter(f => (f.cliente || '').toLowerCase().includes(busqueda));
+            let filtrados = fiadosGlobales.filter(f => (f.cliente || '').toLowerCase().includes(busqueda));
+
+            if (filtroDuenoFiadosActual !== 'TODAS') {
+                filtrados = filtrados.filter(f => f.dueno === filtroDuenoFiadosActual);
+                document.getElementById('label-total-deuda').innerText = `Deuda pendiente de ${filtroDuenoFiadosActual}:`;
+            } else {
+                document.getElementById('label-total-deuda').innerText = `Deuda total pendiente:`;
+            }
+
             const totalDeuda = filtrados.reduce((acc, curr) => acc + curr.monto, 0);
             document.getElementById('total-deuda-texto').innerText = `S/. ${totalDeuda.toFixed(2)}`;
 
