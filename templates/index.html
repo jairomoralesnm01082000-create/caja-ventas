@@ -188,6 +188,7 @@
         let fiadosGlobales = [];
         let datosCompletosGlobales = [];
         let viendoPapelera = false;
+        let tabActual = 'venta';
 
         function setFechaHoy() {
             const fechaLocal = new Date();
@@ -202,6 +203,12 @@
             document.getElementById('rep-hasta').value = hoy;
         }
         setFechaHoy();
+
+        // SINCRONIZACIÓN PERIÓDICA EN VIVO CADA 3 SEGUNDOS
+        setInterval(() => {
+            if (tabActual === 'historial') cargarHistorialSilencioso();
+            if (tabActual === 'fiados') cargarFiadosSilencioso();
+        }, 3000);
 
         async function validarPin() {
             const pin = document.getElementById('input-pin').value;
@@ -228,6 +235,7 @@
         }
 
         function cambiarTab(tab) {
+            tabActual = tab;
             ['venta', 'gasto', 'fiados', 'reporte', 'historial'].forEach(t => {
                 document.getElementById(`sec-${t}`).classList.add('hidden');
                 document.getElementById(`tab-${t}`).className = 'px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap';
@@ -325,6 +333,13 @@
             filtrarFiados();
         }
 
+        async function cargarFiadosSilencioso() {
+            const res = await fetch('/api/datos');
+            const datos = await res.json();
+            fiadosGlobales = datos.filter(d => !d.eliminado && d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
+            filtrarFiados();
+        }
+
         function filtrarFiados() {
             const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
             const cont = document.getElementById('lista-fiados');
@@ -402,10 +417,21 @@
             const res = await fetch('/api/datos');
             const datos = await res.json();
             datosCompletosGlobales = datos;
+            renderizarHistorial();
+        }
+
+        async function cargarHistorialSilencioso() {
+            const res = await fetch('/api/datos');
+            const datos = await res.json();
+            datosCompletosGlobales = datos;
+            renderizarHistorial();
+        }
+
+        function renderizarHistorial() {
             const cont = document.getElementById('lista-historial');
             cont.innerHTML = '';
 
-            const listaFiltrada = datos.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
+            const listaFiltrada = datosCompletosGlobales.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
 
             if (listaFiltrada.length === 0) {
                 cont.innerHTML = viendoPapelera 
@@ -546,7 +572,7 @@
             };
 
             datos.forEach(d => {
-                if (d.eliminado) return; // Omitir registros de la papelera en los cálculos
+                if (d.eliminado) return;
                 const f = d.fecha.slice(0, 10);
                 if(f >= desde && f <= hasta) {
                     if(d.tipo === 'Ingreso') {
