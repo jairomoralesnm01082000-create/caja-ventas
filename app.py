@@ -95,7 +95,6 @@ def registrar_operacion():
     monto = round(float(payload.get("monto", 0)), 2)
 
     ahora_dt = obtener_ahora_local()
-    # Recibe la fecha y hora completa enviada por el navegador o toma la del servidor
     fecha_completa = payload.get(
         "fecha_hora", ahora_dt.strftime(FORMATO_FECHA_HORA)
     )
@@ -135,6 +134,49 @@ def registrar_operacion():
         }
 
     datos.append(nuevo_registro)
+    guardar_datos(datos)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/registrar_compartido", methods=["POST"])
+def registrar_compartido():
+    """Registra una venta compartida repartiendo montos y productos entre dueñas."""
+    payload = request.json
+    distribuciones = payload.get("distribuciones", [])
+    metodo = payload.get("metodo", "Yape")
+    cliente = payload.get("cliente", "").strip()
+    ahora_dt = obtener_ahora_local()
+    fecha_completa = payload.get(
+        "fecha_hora", ahora_dt.strftime(FORMATO_FECHA_HORA)
+    )
+
+    datos = cargar_datos()
+    nuevo_id = max([d.get("id", 0) for d in datos], default=0) + 1
+
+    for dist in distribuciones:
+        monto_item = round(float(dist.get("monto", 0)), 2)
+        if monto_item > 0:
+            dueno_item = dist.get("dueno")
+            desc_item = dist.get("descripcion", "").strip()
+
+            nuevo_registro = {
+                "id": nuevo_id,
+                "tipo": "Ingreso",
+                "dueno": dueno_item,
+                "monto": monto_item,
+                "monto_original": monto_item,
+                "metodo": metodo,
+                "cliente": cliente,
+                "descripcion": desc_item,
+                "fecha": fecha_completa,
+                "cobrado": True if metodo == "Yape" else False,
+                "metodo_cobro": "Yape" if metodo == "Yape" else None,
+                "abonos": [],
+                "eliminado": False,
+            }
+            datos.append(nuevo_registro)
+            nuevo_id += 1
+
     guardar_datos(datos)
     return jsonify({"status": "ok"})
 
