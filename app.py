@@ -107,6 +107,7 @@ def registrar_operacion():
             "fecha": f"{fecha} 12:00:00",
             "cobrado": True if metodo == "Yape" else False,
             "metodo_cobro": "Yape" if metodo == "Yape" else None,
+            "eliminado": False,
         }
     else:
         motivo = payload.get("motivo", "").strip()
@@ -117,6 +118,7 @@ def registrar_operacion():
             "monto": monto,
             "motivo": motivo,
             "fecha": f"{fecha} 12:00:00",
+            "eliminado": False,
         }
 
     datos.append(nuevo_registro)
@@ -126,7 +128,6 @@ def registrar_operacion():
 
 @app.route("/api/cobrar_fiado", methods=["POST"])
 def cobrar_fiado():
-    """Marca un fiado como cobrado indicando si fue en Yape o Efectivo."""
     payload = request.json
     fiado_id = int(payload.get("id"))
     metodo_cobro = payload.get("metodo_cobro", "Yape")
@@ -147,7 +148,6 @@ def cobrar_fiado():
 
 @app.route("/api/deshacer_cobro", methods=["POST"])
 def deshacer_cobro():
-    """Revierte un fiado cobrado a su estado original de pendiente de pago."""
     payload = request.json
     fiado_id = int(payload.get("id"))
     datos = cargar_datos()
@@ -165,10 +165,36 @@ def deshacer_cobro():
 
 @app.route("/api/eliminar", methods=["POST"])
 def eliminar_registro():
+    """Mueve el registro a la papelera (Borrado lógico) para poder restaurarlo."""
     payload = request.json
     registro_id = int(payload.get("id"))
     datos = cargar_datos()
-    datos = [d for d in datos if d.get("id") != registro_id]
+
+    for d in datos:
+        if d.get("id") == registro_id:
+            d["eliminado"] = True
+            d["fecha_eliminado"] = datetime.datetime.now().strftime(
+                FORMATO_FECHA_HORA
+            )
+            break
+
+    guardar_datos(datos)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/restaurar", methods=["POST"])
+def restaurar_registro():
+    """Restaura un registro eliminado de la papelera."""
+    payload = request.json
+    registro_id = int(payload.get("id"))
+    datos = cargar_datos()
+
+    for d in datos:
+        if d.get("id") == registro_id:
+            d["eliminado"] = False
+            d.pop("fecha_eliminado", None)
+            break
+
     guardar_datos(datos)
     return jsonify({"status": "ok"})
 
@@ -203,6 +229,9 @@ def exportar_csv():
     )
 
     for d in datos:
+        if d.get("eliminado", False):
+            continue  # No exportar registros eliminados
+
         f = d.get("fecha", "")[:10]
         if desde <= f <= hasta:
             tipo = d.get("tipo", "")
