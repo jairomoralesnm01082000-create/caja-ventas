@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS Y HORAS -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
             <div class="flex justify-between items-center border-b pb-2">
@@ -113,7 +113,7 @@
             <button onclick="cambiarTab('historial')" id="tab-historial" class="px-3 py-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap">Historial 🗑️</button>
         </div>
 
-        <!-- 1. VENTA / FIADO -->
+        <!-- 1. VENTA / FIADO (INDIVIDUAL O COMPARTIDO) -->
         <div id="sec-venta" class="space-y-4">
             <label class="block font-bold text-sm">Dueña:</label>
             <div class="grid grid-cols-4 gap-1.5">
@@ -237,7 +237,6 @@
 
         <!-- 3. COBRAR FIADOS CON FILTROS POR DUEÑA -->
         <div id="sec-fiados" class="space-y-3 hidden">
-            <!-- Botones de filtro por Dueña -->
             <label class="block font-bold text-xs text-gray-700">Filtrar fiados por dueña:</label>
             <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
                 <button onclick="filtrarDuenoFiados('TODAS')" id="filtro-f-TODAS" class="p-2 rounded-lg border border-gray-300 filter-active shadow-sm">TODAS</button>
@@ -471,7 +470,7 @@
         function seleccionarMetodo(m) {
             metodoV = m;
             document.getElementById('btn-metodo-yape').className = (m === 'Yape') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
-            document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
+            document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
             
             const lbl = document.getElementById('lbl-cliente-v');
             if (m === 'Fiado') {
@@ -626,6 +625,7 @@
             filtrarFiados();
         }
 
+        // RENDERIZADO VISUAL CON NOMBRE DE CLIENTE RESALTADO EN GRANDE
         function filtrarFiados() {
             const busqueda = document.getElementById('buscar-fiador').value.toLowerCase();
             const cont = document.getElementById('lista-fiados');
@@ -650,15 +650,22 @@
 
             filtrados.forEach(f => {
                 const horaLegible = (f.fecha && f.fecha.length >= 16) ? f.fecha.slice(0, 16) : f.fecha;
+                const nombreCliente = f.cliente ? f.cliente.toUpperCase() : 'CLIENTE SIN NOMBRE';
+
                 cont.innerHTML += `
-                <div class="border p-3 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center bg-white shadow-sm gap-2">
+                <div class="border p-3 rounded-xl flex flex-col sm:flex-row justify-between sm:items-center bg-white shadow-sm gap-2 hover:shadow-md transition">
                     <div>
-                        <div class="font-bold text-sm">👤 ${f.dueno} - <span class="text-red-700">S/. ${f.monto.toFixed(2)}</span></div>
-                        <div class="text-xs font-semibold text-indigo-700">Cliente: ${f.cliente || 'Sin nombre'}</div>
-                        <div class="text-xs text-gray-600">${f.descripcion || ''}</div>
-                        <div class="text-xs text-gray-400">🕒 ${horaLegible}</div>
+                        <!-- NOMBRE DEL CLIENTE RESALTADO EN GRANDE Y MONTO EN ROJO -->
+                        <div class="text-base font-extrabold text-slate-800 flex items-center space-x-2">
+                            <span>👤 ${nombreCliente}</span>
+                            <span class="text-red-600 font-black">- S/. ${f.monto.toFixed(2)}</span>
+                        </div>
+                        <!-- DUEÑA CORRESPONDIENTE EN LÍNEA SECUNDARIA -->
+                        <div class="text-xs font-bold text-indigo-700 mt-0.5">Dueña: ${f.dueno}</div>
+                        ${f.descripcion ? `<div class="text-xs text-gray-600 italic">Prod: ${f.descripcion}</div>` : ''}
+                        <div class="text-[11px] text-gray-400">🕒 ${horaLegible}</div>
                     </div>
-                    <div class="flex flex-wrap gap-1">
+                    <div class="flex flex-wrap gap-1 items-center">
                         <button onclick="abrirAbono(${f.id}, '${f.cliente || 'Sin nombre'}', ${f.monto})" class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-amber-600">Abonar</button>
                         <button onclick="cobrarFiado(${f.id}, 'Yape')" class="bg-purple-700 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-purple-800">Yape</button>
                         <button onclick="cobrarFiado(${f.id}, 'Efectivo')" class="bg-green-600 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-green-700">Efectivo</button>
