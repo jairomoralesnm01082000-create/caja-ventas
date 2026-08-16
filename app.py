@@ -104,8 +104,9 @@ def registrar_operacion():
 
     if tipo == "Ingreso":
         metodo = payload.get("metodo")
-        cliente = payload.get("cliente", "").strip()
-        descripcion = payload.get("descripcion", "").strip()
+        # Conversión forzada a mayúsculas
+        cliente = payload.get("cliente", "").strip().upper()
+        descripcion = payload.get("descripcion", "").strip().upper()
         nuevo_registro = {
             "id": nuevo_id,
             "tipo": "Ingreso",
@@ -122,7 +123,8 @@ def registrar_operacion():
             "eliminado": False,
         }
     else:
-        motivo = payload.get("motivo", "").strip()
+        # Conversión forzada a mayúsculas
+        motivo = payload.get("motivo", "").strip().upper()
         nuevo_registro = {
             "id": nuevo_id,
             "tipo": "Gasto",
@@ -140,11 +142,11 @@ def registrar_operacion():
 
 @app.route("/api/registrar_compartido", methods=["POST"])
 def registrar_compartido():
-    """Registra una venta compartida repartiendo montos y productos entre dueñas."""
+    """Registra una venta compartida estandarizando todo en mayúsculas."""
     payload = request.json
     distribuciones = payload.get("distribuciones", [])
     metodo = payload.get("metodo", "Yape")
-    cliente = payload.get("cliente", "").strip()
+    cliente = payload.get("cliente", "").strip().upper()
     ahora_dt = obtener_ahora_local()
     fecha_completa = payload.get(
         "fecha_hora", ahora_dt.strftime(FORMATO_FECHA_HORA)
@@ -157,7 +159,7 @@ def registrar_compartido():
         monto_item = round(float(dist.get("monto", 0)), 2)
         if monto_item > 0:
             dueno_item = dist.get("dueno")
-            desc_item = dist.get("descripcion", "").strip()
+            desc_item = dist.get("descripcion", "").strip().upper()
 
             nuevo_registro = {
                 "id": nuevo_id,
@@ -187,8 +189,8 @@ def editar_registro():
     registro_id = int(payload.get("id"))
     nuevo_monto = round(float(payload.get("monto", 0)), 2)
     nuevo_dueno = payload.get("dueno")
-    nuevo_detalle = payload.get("detalle", "").strip()
-    nueva_desc = payload.get("descripcion", "").strip()
+    nuevo_detalle = payload.get("detalle", "").strip().upper()
+    nueva_desc = payload.get("descripcion", "").strip().upper()
 
     datos = cargar_datos()
     for d in datos:
@@ -287,8 +289,8 @@ def abonar_fiado():
             "dueno": fiado_obj["dueno"],
             "monto": monto_real_abonado,
             "metodo": metodo_cobro,
-            "cliente": fiado_obj.get("cliente", ""),
-            "descripcion": f"Abono a fiado #{fiado_id} ({fiado_obj.get('descripcion', '')})",
+            "cliente": (fiado_obj.get("cliente", "") or "").upper(),
+            "descripcion": f"ABONO A FIADO #{fiado_id} ({fiado_obj.get('descripcion', '')})".upper(),
             "fecha": fecha_hora_local,
             "cobrado": True,
             "metodo_cobro": metodo_cobro,
@@ -442,11 +444,11 @@ def exportar_csv():
             monto = f"{d.get('monto', 0):.2f}"
             metodo = d.get("metodo", "-")
             detalle = (
-                d.get("cliente", "")
+                (d.get("cliente", "") or "").upper()
                 if tipo == "Ingreso"
-                else d.get("motivo", "")
+                else (d.get("motivo", "") or "").upper()
             )
-            desc = d.get("descripcion", "-")
+            desc = (d.get("descripcion", "-") or "-").upper()
             estado = (
                 "Cobrado"
                 if d.get("cobrado", True)
