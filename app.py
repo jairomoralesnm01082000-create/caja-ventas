@@ -8,10 +8,10 @@ from flask import Flask, Response, jsonify, render_template, request
 
 app = Flask(__name__)
 
-# Enlace de tu base de datos persistente en Firebase
+# Base de datos persistente en Firebase
 FIREBASE_URL = "https://caja-ventas-default-rtdb.firebaseio.com"
 
-# PIN de acceso de 4 dígitos actualizado
+# PIN de acceso de 4 dígitos
 PIN_ACCESO = "0108"
 
 DUENOS = ["BERTHA", "KARLA", "CARLITA"]
@@ -23,7 +23,7 @@ FORMATO_FECHA_HORA = "%Y-%m-%d %H:%M:%S"
 # GESTIÓN DE DATOS EN LA NUBE (FIREBASE)
 # ==========================================
 def cargar_datos():
-    """Lee las transacciones directamente desde Firebase."""
+    """Lee las transacciones desde Firebase Realtime Database."""
     try:
         req = urllib.request.Request(f"{FIREBASE_URL}/transacciones.json")
         with urllib.request.urlopen(req, timeout=5) as response:
@@ -42,7 +42,7 @@ def cargar_datos():
 
 
 def guardar_datos(datos):
-    """Guarda todas las transacciones en Firebase permanentemente."""
+    """Guarda las transacciones en Firebase permanentemente."""
     try:
         data_json = json.dumps(datos).encode("utf-8")
         req = urllib.request.Request(
@@ -58,17 +58,15 @@ def guardar_datos(datos):
 
 
 # ==========================================
-# RUTAS DEL SERVIDOR
+# RUTAS DE LA APLICACIÓN WEB
 # ==========================================
 @app.route("/")
 def inicio():
-    """Entrega la interfaz web a laptops y celulares."""
     return render_template("index.html", duenos=DUENOS)
 
 
 @app.route("/api/verificar_pin", methods=["POST"])
 def verificar_pin():
-    """Verifica si el PIN ingresado por el usuario es 0108."""
     payload = request.json
     pin_ingresado = payload.get("pin", "")
     if pin_ingresado == PIN_ACCESO:
@@ -78,13 +76,11 @@ def verificar_pin():
 
 @app.route("/api/datos", methods=["GET"])
 def obtener_datos():
-    """Devuelve todas las transacciones almacenadas en la base de datos."""
     return jsonify(cargar_datos())
 
 
 @app.route("/api/registrar", methods=["POST"])
 def registrar_operacion():
-    """Registra una venta, fiado o gasto en la base de datos."""
     payload = request.json
     tipo = payload.get("tipo")
     dueno = payload.get("dueno")
@@ -110,6 +106,7 @@ def registrar_operacion():
             "descripcion": descripcion,
             "fecha": f"{fecha} 12:00:00",
             "cobrado": True if metodo == "Yape" else False,
+            "metodo_cobro": "Yape" if metodo == "Yape" else None,
         }
     else:
         motivo = payload.get("motivo", "").strip()
@@ -129,15 +126,16 @@ def registrar_operacion():
 
 @app.route("/api/cobrar_fiado", methods=["POST"])
 def cobrar_fiado():
-    """Marca un fiado pendiente como cobrado en la base de datos."""
+    """Marca un fiado como cobrado indicando si fue en Yape o Efectivo."""
     payload = request.json
     fiado_id = int(payload.get("id"))
+    metodo_cobro = payload.get("metodo_cobro", "Yape")
     datos = cargar_datos()
 
     for d in datos:
         if d.get("id") == fiado_id:
             d["cobrado"] = True
-            d["metodo_cobro"] = "Yape"
+            d["metodo_cobro"] = metodo_cobro
             d["fecha_cobro"] = datetime.datetime.now().strftime(
                 FORMATO_FECHA_HORA
             )
@@ -149,7 +147,6 @@ def cobrar_fiado():
 
 @app.route("/api/eliminar", methods=["POST"])
 def eliminar_registro():
-    """Elimina un registro individual de la base de datos."""
     payload = request.json
     registro_id = int(payload.get("id"))
     datos = cargar_datos()
@@ -160,7 +157,6 @@ def eliminar_registro():
 
 @app.route("/api/exportar_csv", methods=["GET"])
 def exportar_csv():
-    """Genera y descarga un archivo CSV compatible con Excel."""
     desde = request.args.get(
         "desde", datetime.datetime.now().strftime(FORMATO_FECHA)
     )
@@ -170,7 +166,7 @@ def exportar_csv():
 
     datos = cargar_datos()
     salida = io.StringIO()
-    salida.write("\ufeff")  # BOM UTF-8 para compatibilidad con caracteres en Excel
+    salida.write("\ufeff")
 
     escritor = csv.writer(salida, delimiter=";")
     escritor.writerow(
@@ -180,10 +176,11 @@ def exportar_csv():
             "Dueña",
             "Tipo",
             "Monto (S/.)",
-            "Método",
+            "Método Inicial",
             "Cliente / Motivo",
             "Descripción",
             "Estado Cobro",
+            "Método de Cobro",
         ]
     )
 
@@ -205,6 +202,7 @@ def exportar_csv():
                 if d.get("cobrado", True)
                 else "Pendiente de Pago (Fiado)"
             )
+            metodo_cobro = d.get("metodo_cobro", "-")
 
             escritor.writerow(
                 [
@@ -217,6 +215,7 @@ def exportar_csv():
                     detalle,
                     desc,
                     estado,
+                    metodo_cobro,
                 ]
             )
 
