@@ -93,8 +93,12 @@ def registrar_operacion():
     tipo = payload.get("tipo")
     dueno = payload.get("dueno")
     monto = round(float(payload.get("monto", 0)), 2)
-    ahora_local = obtener_ahora_local()
-    fecha = payload.get("fecha", ahora_local.strftime(FORMATO_FECHA))
+
+    ahora_dt = obtener_ahora_local()
+    # Recibe la fecha y hora completa enviada por el navegador o toma la del servidor
+    fecha_completa = payload.get(
+        "fecha_hora", ahora_dt.strftime(FORMATO_FECHA_HORA)
+    )
 
     datos = cargar_datos()
     nuevo_id = max([d.get("id", 0) for d in datos], default=0) + 1
@@ -112,7 +116,7 @@ def registrar_operacion():
             "metodo": metodo,
             "cliente": cliente,
             "descripcion": descripcion,
-            "fecha": f"{fecha} 12:00:00",
+            "fecha": fecha_completa,
             "cobrado": True if metodo == "Yape" else False,
             "metodo_cobro": "Yape" if metodo == "Yape" else None,
             "abonos": [],
@@ -126,7 +130,7 @@ def registrar_operacion():
             "dueno": dueno,
             "monto": monto,
             "motivo": motivo,
-            "fecha": f"{fecha} 12:00:00",
+            "fecha": fecha_completa,
             "eliminado": False,
         }
 
@@ -167,7 +171,9 @@ def cobrar_fiado():
     payload = request.json
     fiado_id = int(payload.get("id"))
     metodo_cobro = payload.get("metodo_cobro", "Yape")
-    ahora_local = obtener_ahora_local().strftime(FORMATO_FECHA_HORA)
+    ahora_local = payload.get(
+        "fecha_hora", obtener_ahora_local().strftime(FORMATO_FECHA_HORA)
+    )
 
     datos = cargar_datos()
     for d in datos:
@@ -183,14 +189,12 @@ def cobrar_fiado():
 
 @app.route("/api/abonar_fiado", methods=["POST"])
 def abonar_fiado():
-    """Registra un abono con la fecha/hora local exacta y vínculo al fiado original."""
     payload = request.json
     fiado_id = int(payload.get("id"))
     monto_abono = round(float(payload.get("monto_abono", 0)), 2)
     metodo_cobro = payload.get("metodo_cobro", "Yape")
 
     ahora_dt = obtener_ahora_local()
-    fecha_local = payload.get("fecha", ahora_dt.strftime(FORMATO_FECHA))
     fecha_hora_local = payload.get(
         "fecha_hora", ahora_dt.strftime(FORMATO_FECHA_HORA)
     )
@@ -243,7 +247,7 @@ def abonar_fiado():
             "metodo": metodo_cobro,
             "cliente": fiado_obj.get("cliente", ""),
             "descripcion": f"Abono a fiado #{fiado_id} ({fiado_obj.get('descripcion', '')})",
-            "fecha": f"{fecha_local} 12:00:00",
+            "fecha": fecha_hora_local,
             "cobrado": True,
             "metodo_cobro": metodo_cobro,
             "eliminado": False,
@@ -258,7 +262,6 @@ def abonar_fiado():
 
 @app.route("/api/eliminar_abono_especifico", methods=["POST"])
 def eliminar_abono_especifico():
-    """Elimina un abono erróneo y le regresa el saldo al fiado original."""
     payload = request.json
     fiado_id = int(payload.get("fiado_id"))
     abono_id = int(payload.get("abono_id"))
@@ -270,12 +273,10 @@ def eliminar_abono_especifico():
     if fiado_obj and registro_abono:
         monto_devuelto = registro_abono.get("monto", 0)
 
-        # Regresar saldo al fiado original
         fiado_obj["monto"] = round(fiado_obj["monto"] + monto_devuelto, 2)
         fiado_obj["cobrado"] = False
         fiado_obj["fecha_cobro"] = None
 
-        # Quitar el abono de la lista de abonos del fiado
         if "abonos" in fiado_obj:
             fiado_obj["abonos"] = [
                 ab
@@ -283,7 +284,6 @@ def eliminar_abono_especifico():
                 if ab.get("abono_id") != abono_id
             ]
 
-        # Mover el registro individual de ingreso a la papelera
         registro_abono["eliminado"] = True
         registro_abono["fecha_eliminado"] = obtener_ahora_local().strftime(
             FORMATO_FECHA_HORA
@@ -377,7 +377,7 @@ def exportar_csv():
     escritor.writerow(
         [
             "ID",
-            "Fecha",
+            "Fecha y Hora",
             "Dueña",
             "Tipo",
             "Monto (S/.)",
@@ -415,7 +415,7 @@ def exportar_csv():
             escritor.writerow(
                 [
                     d.get("id"),
-                    f,
+                    d.get("fecha", ""),
                     dueno,
                     tipo,
                     monto,
