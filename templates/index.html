@@ -43,7 +43,7 @@
                     <option value="Efectivo">💵 Efectivo</option>
                 </select>
             </div>
-            <button onclick="confirmarAbono()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700">Guardar Abono</button>
+            <button id="btn-confirmar-abono" onclick="confirmarAbono()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700">Guardar Abono</button>
         </div>
     </div>
 
@@ -75,18 +75,18 @@
                 <label class="block text-xs font-bold mb-1">Descripción / Producto:</label>
                 <input type="text" id="edit-desc" class="w-full p-2 border rounded-lg text-xs">
             </div>
-            <button onclick="guardarEdicion()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">Guardar Cambios</button>
+            <button id="btn-guardar-edicion" onclick="guardarEdicion()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">Guardar Cambios</button>
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-bold text-base text-slate-800">📄 Detalle de Transacción</h3>
                 <button onclick="cerrarDetalle()" class="text-gray-400 hover:text-gray-700 font-bold text-lg">&times;</button>
             </div>
-            <div id="contenido-detalle" class="text-xs space-y-2 text-gray-700"></div>
+            <div id="contenido-detalle" class="text-xs space-y-2 text-gray-700 max-h-72 overflow-y-auto"></div>
             <div id="acciones-detalle" class="pt-2 space-y-2"></div>
             <button onclick="cerrarDetalle()" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-slate-900">Cerrar</button>
         </div>
@@ -124,7 +124,16 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
-                <input type="number" step="0.10" id="monto-v" placeholder="Ej: 15.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg font-bold">
+                <input type="number" step="0.10" id="monto-v" placeholder="0.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-xl font-bold">
+                <!-- Botones de Montos Rápidos -->
+                <div class="grid grid-cols-6 gap-1.5 mt-2 text-xs font-bold">
+                    <button type="button" onclick="sumarMontoRapido('v', 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+1</button>
+                    <button type="button" onclick="sumarMontoRapido('v', 2)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+2</button>
+                    <button type="button" onclick="sumarMontoRapido('v', 5)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+5</button>
+                    <button type="button" onclick="sumarMontoRapido('v', 10)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+10</button>
+                    <button type="button" onclick="sumarMontoRapido('v', 20)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+20</button>
+                    <button type="button" onclick="limpiarMontoRapido('v')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 border rounded">C</button>
+                </div>
             </div>
 
             <label class="block font-bold text-sm">Forma de Pago:</label>
@@ -161,7 +170,7 @@
                 <input type="date" id="fecha-v" class="w-full p-2 border border-gray-300 rounded-lg">
             </div>
 
-            <button onclick="guardarVenta()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition">💾 Guardar Venta / Fiado</button>
+            <button id="btn-guardar-venta" onclick="guardarVenta()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition">💾 Guardar Venta / Fiado</button>
         </div>
 
         <!-- 2. GASTO -->
@@ -180,7 +189,16 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Monto Gastado (S/.):</label>
-                <input type="number" step="0.10" id="monto-g" placeholder="Ej: 10.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg font-bold">
+                <input type="number" step="0.10" id="monto-g" placeholder="0.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-xl font-bold">
+                <!-- Botones de Montos Rápidos -->
+                <div class="grid grid-cols-6 gap-1.5 mt-2 text-xs font-bold">
+                    <button type="button" onclick="sumarMontoRapido('g', 1)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+1</button>
+                    <button type="button" onclick="sumarMontoRapido('g', 2)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+2</button>
+                    <button type="button" onclick="sumarMontoRapido('g', 5)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+5</button>
+                    <button type="button" onclick="sumarMontoRapido('g', 10)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+10</button>
+                    <button type="button" onclick="sumarMontoRapido('g', 20)" class="p-1.5 bg-slate-100 hover:bg-slate-200 border rounded">+20</button>
+                    <button type="button" onclick="limpiarMontoRapido('g')" class="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 border rounded">C</button>
+                </div>
             </div>
 
             <div>
@@ -188,10 +206,10 @@
                 <input type="date" id="fecha-g" class="w-full p-2 border border-gray-300 rounded-lg">
             </div>
 
-            <button onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
+            <button id="btn-guardar-gasto" onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
         </div>
 
-        <!-- 3. COBRAR FIADOS CON ABONOS -->
+        <!-- 3. COBRAR FIADOS -->
         <div id="sec-fiados" class="space-y-4 hidden">
             <div>
                 <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
@@ -266,6 +284,10 @@
         let fiadoAbonoSeleccionado = null;
         let textoWhatsAppGlobal = '';
 
+        function vibrarConfirmacion() {
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
         function setFechaHoy() {
             const fechaLocal = new Date();
             const año = fechaLocal.getFullYear();
@@ -279,6 +301,17 @@
             document.getElementById('rep-hasta').value = hoy;
         }
         setFechaHoy();
+
+        // Botones de monto rápido (+1, +2, +5, etc.)
+        function sumarMontoRapido(tipo, valor) {
+            const input = document.getElementById(`monto-${tipo}`);
+            let actual = parseFloat(input.value) || 0;
+            input.value = (actual + valor).toFixed(2);
+        }
+
+        function limpiarMontoRapido(tipo) {
+            document.getElementById(`monto-${tipo}` biographical).value = '';
+        }
 
         async function fetchSinCache(url, opciones = {}) {
             const separador = url.includes('?') ? '&' : '?';
@@ -300,10 +333,11 @@
         });
         window.addEventListener('focus', () => forzarSincronizacion());
 
+        // Polling rápido cada 1.5s para actualización en vivo entre móviles y laptop
         setInterval(() => {
             if (tabActual === 'historial') cargarHistorialSilencioso();
             if (tabActual === 'fiados') cargarFiadosSilencioso();
-        }, 2500);
+        }, 1500);
 
         function forzarSincronizacion() {
             if (tabActual === 'fiados') cargarFiados();
@@ -380,10 +414,15 @@
             document.getElementById('campos-fiado').classList.toggle('hidden', m !== 'Fiado');
         }
 
+        // GUARDAR VENTA CON PROTECCIÓN DE DOBLE CLIC
         async function guardarVenta() {
+            const btn = document.getElementById('btn-guardar-venta');
             const monto = parseFloat(document.getElementById('monto-v').value);
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
             
+            btn.disabled = true;
+            btn.innerText = '⏳ Guardando...';
+
             const descripcionFinal = (metodoV === 'Yape') 
                 ? document.getElementById('desc-yape').value 
                 : document.getElementById('desc-fiado').value;
@@ -403,19 +442,28 @@
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify(payload) 
             });
+
+            vibrarConfirmacion();
             alert('✅ Registro guardado correctamente');
             document.getElementById('monto-v').value = '';
             document.getElementById('desc-yape').value = '';
             document.getElementById('cliente-fiado').value = '';
             document.getElementById('desc-fiado').value = '';
+            btn.disabled = false;
+            btn.innerText = '💾 Guardar Venta / Fiado';
             setFechaHoy();
         }
 
+        // GUARDAR GASTO CON PROTECCIÓN DE DOBLE CLIC
         async function guardarGasto() {
+            const btn = document.getElementById('btn-guardar-gasto');
             const monto = parseFloat(document.getElementById('monto-g').value);
             const motivo = document.getElementById('motivo-g').value;
             if(!motivo) return alert('Ingresa el motivo del gasto');
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
+
+            btn.disabled = true;
+            btn.innerText = '⏳ Guardando...';
 
             const payload = {
                 tipo: 'Gasto',
@@ -430,9 +478,13 @@
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify(payload) 
             });
+
+            vibrarConfirmacion();
             alert('✅ Gasto registrado correctamente');
             document.getElementById('monto-g').value = '';
             document.getElementById('motivo-g').value = '';
+            btn.disabled = false;
+            btn.innerText = '💸 Guardar Gasto';
             setFechaHoy();
         }
 
@@ -494,9 +546,13 @@
         }
 
         async function confirmarAbono() {
+            const btn = document.getElementById('btn-confirmar-abono');
             const montoAbono = parseFloat(document.getElementById('monto-abono-input').value);
             const metodoCobro = document.getElementById('metodo-abono-input').value;
             if (!montoAbono || montoAbono <= 0) return alert('Ingresa un monto de abono válido');
+
+            btn.disabled = true;
+            btn.innerText = 'Guardando...';
 
             await fetchSinCache('/api/abonar_fiado', {
                 method: 'POST',
@@ -504,7 +560,10 @@
                 body: JSON.stringify({ id: fiadoAbonoSeleccionado, monto_abono: montoAbono, metodo_cobro: metodoCobro })
             });
 
+            vibrarConfirmacion();
             alert('✅ Abono registrado con éxito');
+            btn.disabled = false;
+            btn.innerText = 'Guardar Abono';
             cerrarAbono();
             cargarFiados();
         }
@@ -515,6 +574,7 @@
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({ id: id, metodo_cobro: metodoCobro }) 
             });
+            vibrarConfirmacion();
             alert(`✅ Fiado cobrado en ${metodoCobro}`);
             cargarFiados();
         }
@@ -670,6 +730,7 @@
         }
 
         async function guardarEdicion() {
+            const btn = document.getElementById('btn-guardar-edicion');
             const id = parseInt(document.getElementById('edit-id').value);
             const dueno = document.getElementById('edit-dueno').value;
             const monto = parseFloat(document.getElementById('edit-monto').value);
@@ -678,12 +739,17 @@
 
             if (!monto || monto <= 0) return alert('Ingresa un monto válido');
 
+            btn.disabled = true;
+            btn.innerText = 'Guardando...';
+
             await fetchSinCache('/api/editar', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id, dueno, monto, detalle, descripcion: desc })
             });
 
+            btn.disabled = false;
+            btn.innerText = 'Guardar Cambios';
             alert('✅ Registro editado correctamente');
             cerrarEditar();
             cargarHistorial();
@@ -710,6 +776,15 @@
                     html += `<div><b>Estado:</b> ${item.cobrado ? '✅ Cobrado' : '⏳ Pendiente de cobro'}</div>`;
                     if (item.cobrado && item.metodo_cobro) html += `<div><b>Cobrado mediante:</b> ${item.metodo_cobro}</div>`;
                     if (item.fecha_cobro) html += `<div><b>Fecha de cobro:</b> ${item.fecha_cobro}</div>`;
+                    
+                    // Mostrar historial de abonos
+                    if (item.abonos && item.abonos.length > 0) {
+                        html += `<div class="pt-2 border-t mt-2"><b class="text-indigo-700">Historial de Abonos:</b><ul class="list-disc pl-4 text-[11px] text-gray-600 mt-1">`;
+                        item.abonos.forEach(ab => {
+                            html += `<li>S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha.slice(0, 16)}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
                 }
             } else {
                 html += `<div><b>Motivo del Gasto:</b> ${item.motivo}</div>`;
@@ -862,6 +937,7 @@
                 return;
             }
             navigator.clipboard.writeText(textoWhatsAppGlobal).then(() => {
+                vibrarConfirmacion();
                 alert('📋 Resumen copiado al portapapeles. ¡Listo para pegar en WhatsApp!');
             });
         }
