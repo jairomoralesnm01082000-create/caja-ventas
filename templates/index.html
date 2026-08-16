@@ -169,9 +169,14 @@
             <div id="resultado-reporte" class="bg-gray-50 p-4 rounded-lg border border-gray-200 font-mono text-sm space-y-3"></div>
         </div>
 
-        <!-- 5. HISTORIAL -->
+        <!-- 5. HISTORIAL Y PAPELERA DE RECICLAJE -->
         <div id="sec-historial" class="space-y-3 hidden">
-            <h2 class="font-bold text-sm text-gray-700">Historial completo (haz clic para ver detalles):</h2>
+            <div class="flex justify-between items-center">
+                <h2 id="titulo-historial" class="font-bold text-sm text-gray-700">Historial completo:</h2>
+                <button id="btn-toggle-papelera" onclick="togglePapelera()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg transition">
+                    🗑️ Ver Papelera
+                </button>
+            </div>
             <div id="lista-historial" class="space-y-2"></div>
         </div>
     </div>
@@ -182,6 +187,7 @@
         let metodoV = 'Yape';
         let fiadosGlobales = [];
         let datosCompletosGlobales = [];
+        let viendoPapelera = false;
 
         function setFechaHoy() {
             const fechaLocal = new Date();
@@ -230,7 +236,11 @@
             document.getElementById(`tab-${tab}`).className = 'px-3 py-2 border-b-2 border-green-600 text-green-600 font-bold whitespace-nowrap';
 
             if(tab === 'fiados') cargarFiados();
-            if(tab === 'historial') cargarHistorial();
+            if(tab === 'historial') {
+                viendoPapelera = false;
+                actualizarBotonPapelera();
+                cargarHistorial();
+            }
         }
 
         function seleccionarDuenoV(d) {
@@ -311,7 +321,7 @@
         async function cargarFiados() {
             const res = await fetch('/api/datos');
             const datos = await res.json();
-            fiadosGlobales = datos.filter(d => d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
+            fiadosGlobales = datos.filter(d => !d.eliminado && d.tipo === 'Ingreso' && d.metodo === 'Fiado' && !d.cobrado);
             filtrarFiados();
         }
 
@@ -368,6 +378,26 @@
             cargarHistorial();
         }
 
+        function togglePapelera() {
+            viendoPapelera = !viendoPapelera;
+            actualizarBotonPapelera();
+            cargarHistorial();
+        }
+
+        function actualizarBotonPapelera() {
+            const btn = document.getElementById('btn-toggle-papelera');
+            const tit = document.getElementById('titulo-historial');
+            if (viendoPapelera) {
+                btn.innerText = '📋 Ver Activos';
+                btn.className = 'text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1.5 rounded-lg transition';
+                tit.innerText = '🗑️ Papelera de Eliminados:';
+            } else {
+                btn.innerText = '🗑️ Ver Papelera';
+                btn.className = 'text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg transition';
+                tit.innerText = 'Historial completo:';
+            }
+        }
+
         async function cargarHistorial() {
             const res = await fetch('/api/datos');
             const datos = await res.json();
@@ -375,7 +405,16 @@
             const cont = document.getElementById('lista-historial');
             cont.innerHTML = '';
 
-            datos.slice().reverse().forEach(d => {
+            const listaFiltrada = datos.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
+
+            if (listaFiltrada.length === 0) {
+                cont.innerHTML = viendoPapelera 
+                    ? '<p class="text-gray-400 text-xs text-center py-6">La papelera está vacía.</p>'
+                    : '<p class="text-gray-400 text-xs text-center py-6">No hay registros activos en el historial.</p>';
+                return;
+            }
+
+            listaFiltrada.slice().reverse().forEach(d => {
                 let badge = '';
                 let bgCard = 'bg-white';
                 let info = '';
@@ -401,6 +440,10 @@
                     info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
                 }
 
+                if (viendoPapelera) {
+                    bgCard = 'bg-red-50 border-red-200';
+                }
+
                 cont.innerHTML += `
                 <div class="border p-2.5 rounded-lg flex justify-between items-center ${bgCard} text-xs shadow-sm cursor-pointer hover:shadow-md transition">
                     <div class="flex-1 pr-2" onclick="verDetalle(${d.id})">
@@ -410,8 +453,13 @@
                         ${d.motivo ? `<div class="text-gray-500 italic">Motivo: ${d.motivo}</div>` : ''}
                     </div>
                     <div class="flex items-center space-x-1">
-                        ${esFiadoCobrado ? `<button onclick="deshacerCobro(${d.id})" title="Volver a poner pendiente" class="bg-amber-500 text-white font-bold px-2 py-1 rounded hover:bg-amber-600">↩️ Reabrir</button>` : ''}
-                        <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded hover:bg-red-700">🗑️</button>
+                        ${viendoPapelera 
+                            ? `<button onclick="restaurar(${d.id})" title="Restaurar a activo" class="bg-emerald-600 text-white font-bold px-2 py-1 rounded hover:bg-emerald-700">↩️ Restaurar</button>`
+                            : `
+                                ${esFiadoCobrado ? `<button onclick="deshacerCobro(${d.id})" title="Volver a poner pendiente" class="bg-amber-500 text-white font-bold px-2 py-1 rounded hover:bg-amber-600">↩️ Reabrir</button>` : ''}
+                                <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded hover:bg-red-700">🗑️</button>
+                              `
+                        }
                     </div>
                 </div>`;
             });
@@ -443,11 +491,21 @@
                 html += `<div><b>Motivo del Gasto:</b> ${item.motivo}</div>`;
             }
 
+            if (item.eliminado) {
+                html += `<div class="text-red-600 font-bold pt-1">⚠️ Este registro se encuentra en la Papelera.</div>`;
+            }
+
             html += `</div>`;
             document.getElementById('contenido-detalle').innerHTML = html;
 
             let botonesAccion = '';
-            if (item.tipo === 'Ingreso' && item.metodo === 'Fiado' && item.cobrado) {
+            if (item.eliminado) {
+                botonesAccion = `
+                    <button onclick="restaurar(${item.id})" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700 mb-2">
+                        ↩️ Restaurar este registro al Historial Activo
+                    </button>
+                `;
+            } else if (item.tipo === 'Ingreso' && item.metodo === 'Fiado' && item.cobrado) {
                 botonesAccion = `
                     <button onclick="deshacerCobro(${item.id})" class="w-full bg-amber-500 text-white font-bold py-2 rounded-xl text-xs hover:bg-amber-600 mb-2">
                         ↩️ Desmarcar cobro (Volver a poner pendiente)
@@ -463,12 +521,18 @@
         }
 
         async function eliminar(id) {
-            if(!confirm('¿Eliminar este registro?')) return;
+            if(!confirm('¿Mover este registro a la papelera?')) return;
             await fetch('/api/eliminar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
             cargarHistorial();
         }
 
-        // CÁLCULO DE GANANCIAS CON BALANCE EXCLUSIVO DE YAPE VS GASTOS
+        async function restaurar(id) {
+            await fetch('/api/restaurar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+            alert('✅ Registro restaurado al historial.');
+            cerrarDetalle();
+            cargarHistorial();
+        }
+
         async function calcularGanancias() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
@@ -482,6 +546,7 @@
             };
 
             datos.forEach(d => {
+                if (d.eliminado) return; // Omitir registros de la papelera en los cálculos
                 const f = d.fecha.slice(0, 10);
                 if(f >= desde && f <= hasta) {
                     if(d.tipo === 'Ingreso') {
@@ -530,7 +595,6 @@
                     <div class="text-xs">💵 Total en Efectivo: S/. ${b.efectivo.toFixed(2)}</div>
                     <div class="text-xs text-orange-700">💸 Gastos realizados: S/. ${b.gastos.toFixed(2)}</div>
                     
-                    <!-- BALANCE EXCLUSIVO YAPE (SIN EFECTIVO) -->
                     <div class="bg-purple-50 border border-purple-200 rounded p-1.5 my-1.5 text-xs">
                         <div class="font-bold ${colorYape}">📱 SALDO NETO EN YAPE (Yape - Gastos): S/. ${signYape}${netoYapeSolo.toFixed(2)}</div>
                     </div>
