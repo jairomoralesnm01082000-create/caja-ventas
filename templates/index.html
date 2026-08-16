@@ -288,13 +288,28 @@
             if (navigator.vibrate) navigator.vibrate(50);
         }
 
-        function setFechaHoy() {
+        // FECHA LOCAL EXACTA DEL DISPOSITIVO
+        function obtenerFechaLocalTexto() {
             const fechaLocal = new Date();
             const año = fechaLocal.getFullYear();
             const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
             const dia = String(fechaLocal.getDate()).padStart(2, '0');
-            const hoy = `${año}-${mes}-${dia}`;
-            
+            return `${año}-${mes}-${dia}`;
+        }
+
+        function obtenerFechaHoraLocalTexto() {
+            const fechaLocal = new Date();
+            const año = fechaLocal.getFullYear();
+            const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dia = String(fechaLocal.getDate()).padStart(2, '0');
+            const horas = String(fechaLocal.getHours()).padStart(2, '0');
+            const minutos = String(fechaLocal.getMinutes()).padStart(2, '0');
+            const segundos = String(fechaLocal.getSeconds()).padStart(2, '0');
+            return `${año}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+        }
+
+        function setFechaHoy() {
+            const hoy = obtenerFechaLocalTexto();
             document.getElementById('fecha-v').value = hoy;
             document.getElementById('fecha-g').value = hoy;
             document.getElementById('rep-desde').value = hoy;
@@ -550,10 +565,18 @@
             btn.disabled = true;
             btn.innerText = 'Guardando...';
 
+            const payload = {
+                id: fiadoAbonoSeleccionado,
+                monto_abono: montoAbono,
+                metodo_cobro: metodoCobro,
+                fecha: obtenerFechaLocalTexto(),
+                fecha_hora: obtenerFechaHoraLocalTexto()
+            };
+
             await fetchSinCache('/api/abonar_fiado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: fiadoAbonoSeleccionado, monto_abono: montoAbono, metodo_cobro: metodoCobro })
+                body: JSON.stringify(payload)
             });
 
             vibrarConfirmacion();
@@ -561,6 +584,22 @@
             btn.disabled = false;
             btn.innerText = 'Guardar Abono';
             cerrarAbono();
+            cargarFiados();
+        }
+
+        async function eliminarAbonoEspecifico(fiadoId, abonoId) {
+            if (!confirm('¿Deseas anular este abono y regresar ese dinero a la deuda del cliente?')) return;
+
+            await fetchSinCache('/api/eliminar_abono_especifico', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ fiado_id: fiadoId, abono_id: abonoId })
+            });
+
+            vibrarConfirmacion();
+            alert('↩️ Abono anulado. El saldo pendiente del cliente se ha actualizado.');
+            cerrarDetalle();
+            cargarHistorial();
             cargarFiados();
         }
 
@@ -668,6 +707,8 @@
                             badge = '<span class="text-amber-700 font-bold">[Fiado Pendiente ⏳]</span>';
                             bgCard = 'bg-amber-50 border-amber-200';
                         }
+                    } else if (d.metodo === 'Efectivo') {
+                        badge = '<span class="text-green-700 font-bold">[Efectivo]</span>';
                     }
                     info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
                 } else {
@@ -773,12 +814,17 @@
                     if (item.cobrado && item.metodo_cobro) html += `<div><b>Cobrado mediante:</b> ${item.metodo_cobro}</div>`;
                     if (item.fecha_cobro) html += `<div><b>Fecha de cobro:</b> ${item.fecha_cobro}</div>`;
                     
+                    // Lista interactiva de abonos con botón para anular
                     if (item.abonos && item.abonos.length > 0) {
-                        html += `<div class="pt-2 border-t mt-2"><b class="text-indigo-700">Historial de Abonos:</b><ul class="list-disc pl-4 text-[11px] text-gray-600 mt-1">`;
+                        html += `<div class="pt-2 border-t mt-2"><b class="text-indigo-700">Historial de Abonos:</b><div class="space-y-1 mt-1">`;
                         item.abonos.forEach(ab => {
-                            html += `<li>S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha.slice(0, 16)}</li>`;
+                            html += `
+                            <div class="flex justify-between items-center bg-white p-1.5 rounded border text-[11px]">
+                                <span>• S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha.slice(0, 16)}</span>
+                                ${ab.abono_id ? `<button onclick="eliminarAbonoEspecifico(${item.id}, ${ab.abono_id})" class="text-red-600 hover:text-red-800 font-bold text-xs px-1.5 py-0.5 bg-red-50 rounded" title="Anular este abono">🗑️ Anular</button>` : ''}
+                            </div>`;
                         });
-                        html += `</ul></div>`;
+                        html += `</div></div>`;
                     }
                 }
             } else {
@@ -871,6 +917,8 @@
                             } else {
                                 balance[d.dueno].fiado_p += d.monto;
                             }
+                        } else if(d.metodo === 'Efectivo') {
+                            balance[d.dueno].efectivo += d.monto;
                         }
                     } else if(d.tipo === 'Gasto') {
                         balance[d.dueno].gastos += d.monto;
