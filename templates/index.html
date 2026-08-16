@@ -8,9 +8,24 @@
     <style>
         .selected-border { border: 3px solid #22c55e !important; background-color: #ecfdf5 !important; color: #15803d !important; }
         .filter-active { background-color: #1e293b !important; color: #ffffff !important; }
+        
+        /* Animación suave para notificaciones Toast */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translate(-50%, 0); }
+            to { opacity: 0; transform: translate(-50%, -20px); }
+        }
+        .toast-enter { animation: fadeInDown 0.3s ease forwards; }
+        .toast-exit { animation: fadeOutUp 0.3s ease forwards; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-gray-800 pb-12">
+
+    <!-- CONTENEDOR FLOTANTE DE NOTIFICACIONES TOAST -->
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none space-y-2 w-11/12 max-w-sm"></div>
 
     <!-- MODAL DE BLOQUEO POR PIN -->
     <div id="modal-pin" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex items-center justify-center p-4">
@@ -21,7 +36,7 @@
             <input type="password" id="input-pin" maxlength="4" placeholder="••••" class="w-full p-3 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-xl focus:border-green-600 focus:outline-none" onkeyup="if(event.key==='Enter') validarPin()">
             <button id="btn-validar-pin" onclick="validarPin()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-95 transition">Ingresar</button>
             <p id="error-pin" class="text-xs text-red-600 font-bold hidden">PIN incorrecto. Intenta de nuevo.</p>
-            <p id="estado-servidor" class="text-xs text-amber-600 font-semibold hidden">⏳ Conectando con el servidor, por favor espera un momento...</p>
+            <p id="estado-servidor" class="text-xs text-amber-600 font-semibold hidden">⏳ Conectando con el servidor, espera un momento...</p>
         </div>
     </div>
 
@@ -260,8 +275,17 @@
             <div id="lista-fiados" class="space-y-2"></div>
         </div>
 
-        <!-- 4. REPORTE, EXPORTACIÓN Y BACKUP -->
+        <!-- 4. REPORTE, EXPORTACIÓN Y ATAJOS DE FECHA -->
         <div id="sec-reporte" class="space-y-4 hidden">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">Atajos de fecha:</label>
+                <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
+                    <button onclick="setRangoReporte('hoy')" class="p-2 bg-slate-100 hover:bg-slate-200 border border-gray-300 rounded-lg text-center transition">📅 Hoy</button>
+                    <button onclick="setRangoReporte('ayer')" class="p-2 bg-slate-100 hover:bg-slate-200 border border-gray-300 rounded-lg text-center transition">⏮️ Ayer</button>
+                    <button onclick="setRangoReporte('mes')" class="p-2 bg-slate-100 hover:bg-slate-200 border border-gray-300 rounded-lg text-center transition">📆 Este Mes</button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="block text-xs font-bold mb-1">Desde:</label>
@@ -286,7 +310,7 @@
             </button>
         </div>
 
-        <!-- 5. HISTORIAL CON FILTROS POR DUEÑA -->
+        <!-- 5. HISTORIAL CON BUSCADOR EN VIVO Y FILTRO POR FECHA -->
         <div id="sec-historial" class="space-y-3 hidden">
             <div class="flex justify-between items-center">
                 <h2 id="titulo-historial" class="font-bold text-sm text-gray-700">Historial completo:</h2>
@@ -295,6 +319,24 @@
                 </button>
             </div>
 
+            <!-- Buscador de texto en vivo -->
+            <div>
+                <input type="text" id="buscar-historial" oninput="renderizarHistorial()" placeholder="🔍 Buscar (cliente, producto, motivo, monto)..." class="w-full p-2 border border-gray-300 rounded-lg text-xs focus:border-green-600 focus:outline-none">
+            </div>
+
+            <!-- Filtro de Fecha para el Historial con Atajos -->
+            <div class="bg-slate-50 border border-gray-200 p-2.5 rounded-xl space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="text-[11px] font-bold text-gray-600">📅 Filtrar por fecha específica:</label>
+                    <button onclick="limpiarFechaHistorial()" class="text-[11px] text-blue-600 font-bold hover:underline">Ver todas</button>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <input type="date" id="filtro-fecha-historial" onchange="renderizarHistorial()" class="col-span-2 p-1.5 border border-gray-300 rounded-lg text-xs font-bold bg-white">
+                    <button onclick="setFechaHistorialRapida('hoy')" class="p-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold hover:bg-gray-100">Hoy</button>
+                </div>
+            </div>
+
+            <!-- Filtros por dueña -->
             <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
                 <button onclick="filtrarDuenoHistorial('TODAS')" id="filtro-h-TODAS" class="p-1.5 rounded border border-gray-300 filter-active">TODAS</button>
                 <button onclick="filtrarDuenoHistorial('BERTHA')" id="filtro-h-BERTHA" class="p-1.5 rounded border border-gray-300 bg-white">BERTHA</button>
@@ -318,6 +360,26 @@
         let filtroDuenoFiadosActual = 'TODAS';
         let fiadoAbonoSeleccionado = null;
         let textoWhatsAppGlobal = '';
+
+        function mostrarToast(mensaje, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colorClass = tipo === 'success' 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-slate-800 text-white';
+
+            toast.className = `${colorClass} px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold text-center toast-enter flex items-center justify-center space-x-2`;
+            toast.innerHTML = `<span>${mensaje}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
 
         function vibrarConfirmacion() {
             if (navigator.vibrate) navigator.vibrate(50);
@@ -348,6 +410,46 @@
             document.getElementById('rep-hasta').value = hoy;
         }
         setFechaHoy();
+
+        // ATAJOS DE FECHA EN HISTORIAL
+        function setFechaHistorialRapida(tipo) {
+            if (tipo === 'hoy') {
+                document.getElementById('filtro-fecha-historial').value = obtenerFechaLocalTexto();
+            }
+            renderizarHistorial();
+        }
+
+        function limpiarFechaHistorial() {
+            document.getElementById('filtro-fecha-historial').value = '';
+            renderizarHistorial();
+        }
+
+        function setRangoReporte(rango) {
+            const hoyObj = new Date();
+            const hoyStr = obtenerFechaLocalTexto();
+
+            if (rango === 'hoy') {
+                document.getElementById('rep-desde').value = hoyStr;
+                document.getElementById('rep-hasta').value = hoyStr;
+            } else if (rango === 'ayer') {
+                const ayerObj = new Date(hoyObj);
+                ayerObj.setDate(hoyObj.getDate() - 1);
+                const aAño = ayerObj.getFullYear();
+                const aMes = String(ayerObj.getMonth() + 1).padStart(2, '0');
+                const aDia = String(ayerObj.getDate()).padStart(2, '0');
+                const ayerStr = `${aAño}-${aMes}-${aDia}`;
+                document.getElementById('rep-desde').value = ayerStr;
+                document.getElementById('rep-hasta').value = ayerStr;
+            } else if (rango === 'mes') {
+                const año = hoyObj.getFullYear();
+                const mes = String(hoyObj.getMonth() + 1).padStart(2, '0');
+                document.getElementById('rep-desde').value = `${año}-${mes}-01`;
+                document.getElementById('rep-hasta').value = hoyStr;
+            }
+
+            calcularGanancias();
+            mostrarToast(`📅 Rango actualizado: ${rango.toUpperCase()}`);
+        }
 
         function sumarMontoRapido(tipo, valor) {
             const input = document.getElementById(`monto-${tipo}`);
@@ -382,6 +484,15 @@
             });
         }
 
+        function comprobarSesionGuardada() {
+            const sesionActiva = localStorage.getItem('caja_sesion_activa');
+            if (sesionActiva === 'true') {
+                document.getElementById('modal-pin').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+            }
+        }
+        comprobarSesionGuardada();
+
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') forzarSincronizacion();
         });
@@ -398,7 +509,6 @@
             if (tabActual === 'reporte') calcularGanancias();
         }
 
-        // VALIDACIÓN DE PIN ROBUSTA CON FEEDBACK VISUAL Y MANEJO DE ERRORES
         async function validarPin() {
             const inputPin = document.getElementById('input-pin');
             const btnPin = document.getElementById('btn-validar-pin');
@@ -429,9 +539,11 @@
 
                 if (data.valido) {
                     vibrarConfirmacion();
+                    localStorage.setItem('caja_sesion_activa', 'true');
                     document.getElementById('modal-pin').classList.add('hidden');
                     document.getElementById('app-container').classList.remove('hidden');
                     errorPin.classList.add('hidden');
+                    mostrarToast('🔓 Sesión iniciada correctamente');
                 } else {
                     errorPin.innerText = 'PIN incorrecto. Intenta de nuevo.';
                     errorPin.classList.remove('hidden');
@@ -439,7 +551,7 @@
                 }
             } catch (err) {
                 estadoServidor.classList.add('hidden');
-                errorPin.innerText = 'El servidor está iniciando. Espera 10 segundos y presiona Ingresar nuevamente.';
+                errorPin.innerText = 'El servidor está iniciando. Espera 10 segundos e intenta nuevamente.';
                 errorPin.classList.remove('hidden');
             } finally {
                 btnPin.disabled = false;
@@ -448,10 +560,12 @@
         }
 
         function bloquearApp() {
+            localStorage.removeItem('caja_sesion_activa');
             document.getElementById('modal-pin').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('input-pin').value = '';
             document.getElementById('error-pin').classList.add('hidden');
+            mostrarToast('🔒 Caja bloqueada', 'info');
         }
 
         function cambiarTab(tab) {
@@ -528,7 +642,7 @@
                 if (total <= 0) return alert('Debes ingresar al menos un monto para repartir.');
 
                 btn.disabled = true;
-                btn.innerText = '⏳ Guardando venta compartida...';
+                btn.innerText = '⏳ Guardando venta...';
 
                 const distribuciones = [
                     { dueno: 'BERTHA', monto: mB, descripcion: document.getElementById('comp-desc-BERTHA').value },
@@ -548,7 +662,7 @@
                 });
 
                 vibrarConfirmacion();
-                alert(`✅ Venta compartida de S/. ${total.toFixed(2)} registrada con éxito.`);
+                mostrarToast(`✅ Venta compartida de S/. ${total.toFixed(2)} guardada`);
 
                 document.getElementById('comp-monto-BERTHA').value = '';
                 document.getElementById('comp-desc-BERTHA').value = '';
@@ -588,7 +702,8 @@
             });
 
             vibrarConfirmacion();
-            alert('✅ Registro guardado correctamente');
+            mostrarToast(`✅ Venta de S/. ${monto.toFixed(2)} registrada (${duenoV})`);
+
             document.getElementById('monto-v').value = '';
             document.getElementById('cliente-v').value = '';
             document.getElementById('desc-v').value = '';
@@ -625,7 +740,8 @@
             });
 
             vibrarConfirmacion();
-            alert('✅ Gasto registrado correctamente');
+            mostrarToast(`💸 Gasto de S/. ${monto.toFixed(2)} registrado (${duenoG})`);
+
             document.getElementById('monto-g').value = '';
             document.getElementById('motivo-g').value = '';
             btn.disabled = false;
@@ -738,7 +854,7 @@
             });
 
             vibrarConfirmacion();
-            alert('✅ Abono registrado con éxito');
+            mostrarToast(`✅ Abono de S/. ${montoAbono.toFixed(2)} registrado`);
             btn.disabled = false;
             btn.innerText = 'Guardar Abono';
             cerrarAbono();
@@ -755,7 +871,7 @@
             });
 
             vibrarConfirmacion();
-            alert('↩️ Abono anulado. El saldo pendiente del cliente se ha actualizado.');
+            mostrarToast('↩️ Abono anulado y saldo reintegrado');
             cerrarDetalle();
             cargarHistorial();
             cargarFiados();
@@ -768,7 +884,7 @@
                 body: JSON.stringify({ id: id, metodo_cobro: metodoCobro, fecha_hora: obtenerFechaHoraLocalTexto() }) 
             });
             vibrarConfirmacion();
-            alert(`✅ Fiado cobrado en ${metodoCobro}`);
+            mostrarToast(`✅ Fiado cobrado en ${metodoCobro}`);
             cargarFiados();
         }
 
@@ -779,7 +895,7 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id: id })
             });
-            alert('↩️ Fiado regresado a estado Pendiente.');
+            mostrarToast('↩️ Fiado regresado a estado Pendiente');
             cerrarDetalle();
             cargarHistorial();
         }
@@ -829,20 +945,40 @@
             renderizarHistorial();
         }
 
+        // RENDERIZADO DEL HISTORIAL CON FILTRO COMBINADO (DUEÑA + TEXTO + FECHA)
         function renderizarHistorial() {
             const cont = document.getElementById('lista-historial');
+            const textoBusqueda = (document.getElementById('buscar-historial').value || '').toLowerCase().trim();
+            const fechaFiltro = document.getElementById('filtro-fecha-historial').value;
             cont.innerHTML = '';
 
             let listaFiltrada = datosCompletosGlobales.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
 
+            // 1. Filtro por Dueña
             if (filtroDuenoActual !== 'TODAS') {
                 listaFiltrada = listaFiltrada.filter(d => d.dueno === filtroDuenoActual);
+            }
+
+            // 2. Filtro por Fecha específica
+            if (fechaFiltro) {
+                listaFiltrada = listaFiltrada.filter(d => d.fecha && d.fecha.startsWith(fechaFiltro));
+            }
+
+            // 3. Filtro por Texto en tiempo real
+            if (textoBusqueda) {
+                listaFiltrada = listaFiltrada.filter(d => {
+                    const cli = (d.cliente || '').toLowerCase();
+                    const desc = (d.descripcion || '').toLowerCase();
+                    const mot = (d.motivo || '').toLowerCase();
+                    const monto = (d.monto || '').toString();
+                    return cli.includes(textoBusqueda) || desc.includes(textoBusqueda) || mot.includes(textoBusqueda) || monto.includes(textoBusqueda);
+                });
             }
 
             if (listaFiltrada.length === 0) {
                 cont.innerHTML = viendoPapelera 
                     ? '<p class="text-gray-400 text-xs text-center py-6">La papelera está vacía.</p>'
-                    : '<p class="text-gray-400 text-xs text-center py-6">No hay registros con este filtro.</p>';
+                    : '<p class="text-gray-400 text-xs text-center py-6">No se encontraron registros con este filtro.</p>';
                 return;
             }
 
@@ -882,7 +1018,7 @@
                 <div class="border p-2.5 rounded-lg flex justify-between items-center ${bgCard} text-xs shadow-sm cursor-pointer hover:shadow-md transition">
                     <div class="flex-1 pr-2" onclick="verDetalle(${d.id})">
                         <div>${info}</div>
-                        ${d.cliente ? `<div class="text-gray-500 font-semibold">Cliente: ${d.cliente}</div>` : ''}
+                        ${d.cliente ? `<div class="text-gray-600 font-semibold">Cliente: ${d.cliente}</div>` : ''}
                         ${d.descripcion ? `<div class="text-gray-500 italic">Prod: ${d.descripcion}</div>` : ''}
                         ${d.motivo ? `<div class="text-gray-500 italic">Motivo: ${d.motivo}</div>` : ''}
                     </div>
@@ -947,7 +1083,7 @@
 
             btn.disabled = false;
             btn.innerText = 'Guardar Cambios';
-            alert('✅ Registro editado correctamente');
+            mostrarToast('✅ Registro editado correctamente');
             cerrarEditar();
             cargarHistorial();
         }
@@ -1033,6 +1169,7 @@
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({id}) 
             });
+            mostrarToast('🗑️ Registro movido a la papelera', 'info');
             cargarHistorial();
         }
 
@@ -1042,7 +1179,7 @@
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({id}) 
             });
-            alert('✅ Registro restaurado al historial.');
+            mostrarToast('✅ Registro restaurado al historial');
             cerrarDetalle();
             cargarHistorial();
         }
@@ -1186,7 +1323,7 @@
             }
             navigator.clipboard.writeText(textoWhatsAppGlobal).then(() => {
                 vibrarConfirmacion();
-                alert('📋 Resumen copiado al portapapeles. ¡Listo para pegar en WhatsApp!');
+                mostrarToast('📋 Resumen copiado. ¡Listo para pegar en WhatsApp!');
             });
         }
 
