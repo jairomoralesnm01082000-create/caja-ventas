@@ -112,13 +112,11 @@
 
         <!-- 3. COBRAR FIADOS CON FILTRADOR Y TOTALIZADOR -->
         <div id="sec-fiados" class="space-y-4 hidden">
-            <!-- Barra de búsqueda / filtrador -->
             <div>
                 <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
                 <input type="text" id="buscar-fiador" oninput="filtrarFiados()" placeholder="Escribe el nombre del cliente..." class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:border-green-600 focus:outline-none">
             </div>
 
-            <!-- Resumen de deuda acumulada -->
             <div id="box-total-deuda" class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
                 <span class="text-xs font-bold text-amber-800">Deuda total pendiente:</span>
                 <span id="total-deuda-texto" class="text-base font-bold text-amber-900">S/. 0.00</span>
@@ -164,8 +162,14 @@
         let metodoV = 'Yape';
         let fiadosGlobales = [];
 
+        // FUNCIÓN DE FECHA LOCAL EXACTA
         function setFechaHoy() {
-            const hoy = new Date().toISOString().split('T')[0];
+            const fechaLocal = new Date();
+            const año = fechaLocal.getFullYear();
+            const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+            const dia = String(fechaLocal.getDate()).padStart(2, '0');
+            const hoy = `${año}-${mes}-${dia}`;
+            
             document.getElementById('fecha-v').value = hoy;
             document.getElementById('fecha-g').value = hoy;
             document.getElementById('rep-desde').value = hoy;
@@ -216,7 +220,7 @@
                 const btn = document.getElementById(`btn-v-${nom}`);
                 btn.className = (nom === d) ? 'p-2 border-2 rounded-lg font-bold text-sm text-center selected-border' : 'p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300';
             });
-            document.getElementById('fecha-v').value = new Date().toISOString().split('T')[0];
+            setFechaHoy();
         }
 
         function seleccionarDuenoG(d) {
@@ -225,7 +229,7 @@
                 const btn = document.getElementById(`btn-g-${nom}`);
                 btn.className = (nom === d) ? 'p-2 border-2 rounded-lg font-bold text-sm text-center selected-border' : 'p-2 border-2 rounded-lg font-bold text-sm text-center border-gray-300';
             });
-            document.getElementById('fecha-g').value = new Date().toISOString().split('T')[0];
+            setFechaHoy();
         }
 
         function seleccionarMetodo(m) {
@@ -254,6 +258,7 @@
             document.getElementById('monto-v').value = '';
             document.getElementById('cliente-fiado').value = '';
             document.getElementById('desc-fiado').value = '';
+            setFechaHoy();
         }
 
         async function guardarGasto() {
@@ -274,9 +279,9 @@
             alert('✅ Gasto registrado correctamente');
             document.getElementById('monto-g').value = '';
             document.getElementById('motivo-g').value = '';
+            setFechaHoy();
         }
 
-        // CARGA Y FILTRADO DE FIADOS
         async function cargarFiados() {
             const res = await fetch('/api/datos');
             const datos = await res.json();
@@ -290,8 +295,6 @@
             cont.innerHTML = '';
 
             const filtrados = fiadosGlobales.filter(f => (f.cliente || '').toLowerCase().includes(busqueda));
-            
-            // Calcular la deuda acumulada de los fiados filtrados
             const totalDeuda = filtrados.reduce((acc, curr) => acc + curr.monto, 0);
             document.getElementById('total-deuda-texto').innerText = `S/. ${totalDeuda.toFixed(2)}`;
 
