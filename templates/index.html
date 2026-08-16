@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .selected-border { border: 3px solid #22c55e !important; background-color: #ecfdf5 !important; color: #15803d !important; }
+        .filter-active { background-color: #1e293b !important; color: #ffffff !important; }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-gray-800 pb-12">
@@ -23,6 +24,61 @@
         </div>
     </div>
 
+    <!-- MODAL DE ABONO PARCIAL A FIADO -->
+    <div id="modal-abono" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-xs w-full space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-sm text-slate-800">💵 Registrar Abono</h3>
+                <button onclick="cerrarAbono()" class="text-gray-400 font-bold text-lg">&times;</button>
+            </div>
+            <p id="info-abono-fiado" class="text-xs text-gray-600"></p>
+            <div>
+                <label class="block text-xs font-bold mb-1">Monto a abonar (S/.):</label>
+                <input type="number" step="0.10" id="monto-abono-input" placeholder="Ej: 5.00" class="w-full p-2 border rounded-lg text-base font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1">Método de Cobro:</label>
+                <select id="metodo-abono-input" class="w-full p-2 border rounded-lg text-xs font-bold">
+                    <option value="Yape">📱 Yape</option>
+                    <option value="Efectivo">💵 Efectivo</option>
+                </select>
+            </div>
+            <button onclick="confirmarAbono()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700">Guardar Abono</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDICIÓN DE REGISTRO -->
+    <div id="modal-editar" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-sm text-slate-800">✏️ Editar Transacción</h3>
+                <button onclick="cerrarEditar()" class="text-gray-400 font-bold text-lg">&times;</button>
+            </div>
+            <input type="hidden" id="edit-id">
+            <div>
+                <label class="block text-xs font-bold mb-1">Dueña:</label>
+                <select id="edit-dueno" class="w-full p-2 border rounded-lg text-xs font-bold">
+                    <option value="BERTHA">BERTHA</option>
+                    <option value="KARLA">KARLA</option>
+                    <option value="CARLITA">CARLITA</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold mb-1">Monto (S/.):</label>
+                <input type="number" step="0.10" id="edit-monto" class="w-full p-2 border rounded-lg text-sm font-bold">
+            </div>
+            <div>
+                <label id="edit-label-detalle" class="block text-xs font-bold mb-1">Cliente / Motivo:</label>
+                <input type="text" id="edit-detalle" class="w-full p-2 border rounded-lg text-xs">
+            </div>
+            <div id="edit-box-desc">
+                <label class="block text-xs font-bold mb-1">Descripción / Producto:</label>
+                <input type="text" id="edit-desc" class="w-full p-2 border rounded-lg text-xs">
+            </div>
+            <button onclick="guardarEdicion()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">Guardar Cambios</button>
+        </div>
+    </div>
+
     <!-- MODAL DE DETALLE DE TRANSACCIÓN -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
@@ -31,7 +87,7 @@
                 <button onclick="cerrarDetalle()" class="text-gray-400 hover:text-gray-700 font-bold text-lg">&times;</button>
             </div>
             <div id="contenido-detalle" class="text-xs space-y-2 text-gray-700"></div>
-            <div id="acciones-detalle" class="pt-2"></div>
+            <div id="acciones-detalle" class="pt-2 space-y-2"></div>
             <button onclick="cerrarDetalle()" class="w-full bg-slate-800 text-white font-bold py-2 rounded-xl text-xs hover:bg-slate-900">Cerrar</button>
         </div>
     </div>
@@ -68,7 +124,7 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Monto (S/.):</label>
-                <input type="number" step="0.10" id="monto-v" placeholder="Ej: 15.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg">
+                <input type="number" step="0.10" id="monto-v" placeholder="Ej: 15.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg font-bold">
             </div>
 
             <label class="block font-bold text-sm">Forma de Pago:</label>
@@ -124,7 +180,7 @@
 
             <div>
                 <label class="block font-bold text-sm mb-1">Monto Gastado (S/.):</label>
-                <input type="number" step="0.10" id="monto-g" placeholder="Ej: 10.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg">
+                <input type="number" step="0.10" id="monto-g" placeholder="Ej: 10.00" class="w-full p-2.5 border border-gray-300 rounded-lg text-lg font-bold">
             </div>
 
             <div>
@@ -135,7 +191,7 @@
             <button onclick="guardarGasto()" class="w-full bg-orange-600 text-white font-bold py-3 rounded-lg shadow hover:bg-orange-700 active:scale-95 transition">💸 Guardar Gasto</button>
         </div>
 
-        <!-- 3. COBRAR FIADOS -->
+        <!-- 3. COBRAR FIADOS CON ABONOS -->
         <div id="sec-fiados" class="space-y-4 hidden">
             <div>
                 <label class="block font-bold text-xs text-gray-600 mb-1">🔍 Buscar fiador por cliente:</label>
@@ -151,7 +207,7 @@
             <div id="lista-fiados" class="space-y-2"></div>
         </div>
 
-        <!-- 4. REPORTE Y EXPORTACIÓN A EXCEL -->
+        <!-- 4. REPORTE, EXPORTACIÓN Y BACKUP -->
         <div id="sec-reporte" class="space-y-4 hidden">
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -164,17 +220,20 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="calcularGanancias()" class="bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow hover:bg-blue-700 text-xs">🔍 Calcular</button>
-                <button onclick="descargarExcel()" class="bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow hover:bg-emerald-800 text-xs flex items-center justify-center space-x-1">
-                    <span>📥 Descargar Excel</span>
-                </button>
+            <div class="grid grid-cols-3 gap-1.5">
+                <button onclick="calcularGanancias()" class="bg-blue-600 text-white font-bold py-2 rounded-lg shadow hover:bg-blue-700 text-xs">🔍 Calcular</button>
+                <button onclick="descargarExcel()" class="bg-emerald-700 text-white font-bold py-2 rounded-lg shadow hover:bg-emerald-800 text-xs">📥 Excel</button>
+                <button onclick="copiarWhatsApp()" class="bg-teal-600 text-white font-bold py-2 rounded-lg shadow hover:bg-teal-700 text-xs">📲 WhatsApp</button>
             </div>
 
             <div id="resultado-reporte" class="bg-gray-50 p-4 rounded-lg border border-gray-200 font-mono text-sm space-y-3"></div>
+
+            <button onclick="descargarBackup()" class="w-full bg-slate-700 text-white font-bold py-2.5 rounded-lg text-xs hover:bg-slate-800 flex items-center justify-center space-x-1">
+                <span>💾 Descargar Copia de Seguridad Completa (JSON)</span>
+            </button>
         </div>
 
-        <!-- 5. HISTORIAL Y PAPELERA DE RECICLAJE -->
+        <!-- 5. HISTORIAL CON FILTROS POR DUEÑA -->
         <div id="sec-historial" class="space-y-3 hidden">
             <div class="flex justify-between items-center">
                 <h2 id="titulo-historial" class="font-bold text-sm text-gray-700">Historial completo:</h2>
@@ -182,6 +241,15 @@
                     🗑️ Ver Papelera
                 </button>
             </div>
+
+            <!-- Filtros por dueña -->
+            <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
+                <button onclick="filtrarDuenoHistorial('TODAS')" id="filtro-h-TODAS" class="p-1.5 rounded border border-gray-300 filter-active">TODAS</button>
+                <button onclick="filtrarDuenoHistorial('BERTHA')" id="filtro-h-BERTHA" class="p-1.5 rounded border border-gray-300 bg-white">BERTHA</button>
+                <button onclick="filtrarDuenoHistorial('KARLA')" id="filtro-h-KARLA" class="p-1.5 rounded border border-gray-300 bg-white">KARLA</button>
+                <button onclick="filtrarDuenoHistorial('CARLITA')" id="filtro-h-CARLITA" class="p-1.5 rounded border border-gray-300 bg-white">CARLITA</button>
+            </div>
+
             <div id="lista-historial" class="space-y-2"></div>
         </div>
     </div>
@@ -194,6 +262,9 @@
         let datosCompletosGlobales = [];
         let viendoPapelera = false;
         let tabActual = 'venta';
+        let filtroDuenoActual = 'TODAS';
+        let fiadoAbonoSeleccionado = null;
+        let textoWhatsAppGlobal = '';
 
         function setFechaHoy() {
             const fechaLocal = new Date();
@@ -209,7 +280,6 @@
         }
         setFechaHoy();
 
-        // PETICIÓN HTTP SEGURA QUE DESACTIVA EL CACHÉ EN MÓVILES
         async function fetchSinCache(url, opciones = {}) {
             const separador = url.includes('?') ? '&' : '?';
             const urlConTimestamp = `${url}${separador}_t=${Date.now()}`;
@@ -225,17 +295,11 @@
             });
         }
 
-        // AUTO-SINCRONIZACIÓN INMEDIATA AL VOLVER A TOCAR EL CELULAR O CAMBIAR DE APP
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                forzarSincronizacion();
-            }
+            if (document.visibilityState === 'visible') forzarSincronizacion();
         });
-        window.addEventListener('focus', () => {
-            forzarSincronizacion();
-        });
+        window.addEventListener('focus', () => forzarSincronizacion());
 
-        // TEMPORIZADOR EN SEGUNDO PLANO (CADA 2.5 SEGUNDOS)
         setInterval(() => {
             if (tabActual === 'historial') cargarHistorialSilencioso();
             if (tabActual === 'fiados') cargarFiadosSilencioso();
@@ -317,7 +381,7 @@
         }
 
         async function guardarVenta() {
-            const monto = document.getElementById('monto-v').value;
+            const monto = parseFloat(document.getElementById('monto-v').value);
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
             
             const descripcionFinal = (metodoV === 'Yape') 
@@ -348,7 +412,7 @@
         }
 
         async function guardarGasto() {
-            const monto = document.getElementById('monto-g').value;
+            const monto = parseFloat(document.getElementById('monto-g').value);
             const motivo = document.getElementById('motivo-g').value;
             if(!motivo) return alert('Ingresa el motivo del gasto');
             if(!monto || monto <= 0) return alert('Ingresa un monto válido');
@@ -404,17 +468,45 @@
                 cont.innerHTML += `
                 <div class="border p-3 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center bg-white shadow-sm gap-2">
                     <div>
-                        <div class="font-bold text-sm">👤 ${f.dueno} - S/. ${f.monto.toFixed(2)}</div>
+                        <div class="font-bold text-sm">👤 ${f.dueno} - <span class="text-red-700">S/. ${f.monto.toFixed(2)}</span></div>
                         <div class="text-xs font-semibold text-indigo-700">Cliente: ${f.cliente || 'Sin nombre'}</div>
                         <div class="text-xs text-gray-600">${f.descripcion || ''}</div>
                         <div class="text-xs text-gray-400">${f.fecha.slice(0, 10)}</div>
                     </div>
-                    <div class="flex space-x-2">
-                        <button onclick="cobrarFiado(${f.id}, 'Yape')" class="bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-purple-800 active:scale-95 transition">Yape</button>
-                        <button onclick="cobrarFiado(${f.id}, 'Efectivo')" class="bg-green-600 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-green-700 active:scale-95 transition">Efectivo</button>
+                    <div class="flex flex-wrap gap-1">
+                        <button onclick="abrirAbono(${f.id}, '${f.cliente || 'Sin nombre'}', ${f.monto})" class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-amber-600">Abonar</button>
+                        <button onclick="cobrarFiado(${f.id}, 'Yape')" class="bg-purple-700 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-purple-800">Yape</button>
+                        <button onclick="cobrarFiado(${f.id}, 'Efectivo')" class="bg-green-600 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-green-700">Efectivo</button>
                     </div>
                 </div>`;
             });
+        }
+
+        function abrirAbono(id, cliente, deuda) {
+            fiadoAbonoSeleccionado = id;
+            document.getElementById('info-abono-fiado').innerText = `Cliente: ${cliente} | Deuda actual: S/. ${deuda.toFixed(2)}`;
+            document.getElementById('monto-abono-input').value = '';
+            document.getElementById('modal-abono').classList.remove('hidden');
+        }
+
+        function cerrarAbono() {
+            document.getElementById('modal-abono').classList.add('hidden');
+        }
+
+        async function confirmarAbono() {
+            const montoAbono = parseFloat(document.getElementById('monto-abono-input').value);
+            const metodoCobro = document.getElementById('metodo-abono-input').value;
+            if (!montoAbono || montoAbono <= 0) return alert('Ingresa un monto de abono válido');
+
+            await fetchSinCache('/api/abonar_fiado', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: fiadoAbonoSeleccionado, monto_abono: montoAbono, metodo_cobro: metodoCobro })
+            });
+
+            alert('✅ Abono registrado con éxito');
+            cerrarAbono();
+            cargarFiados();
         }
 
         async function cobrarFiado(id, metodoCobro) {
@@ -459,6 +551,17 @@
             }
         }
 
+        function filtrarDuenoHistorial(dueno) {
+            filtroDuenoActual = dueno;
+            ['TODAS', 'BERTHA', 'KARLA', 'CARLITA'].forEach(d => {
+                const btn = document.getElementById(`filtro-h-${d}`);
+                btn.className = (d === dueno) 
+                    ? 'p-1.5 rounded border border-gray-300 filter-active font-bold' 
+                    : 'p-1.5 rounded border border-gray-300 bg-white font-bold';
+            });
+            renderizarHistorial();
+        }
+
         async function cargarHistorial() {
             const res = await fetchSinCache('/api/datos');
             const datos = await res.json();
@@ -477,12 +580,16 @@
             const cont = document.getElementById('lista-historial');
             cont.innerHTML = '';
 
-            const listaFiltrada = datosCompletosGlobales.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
+            let listaFiltrada = datosCompletosGlobales.filter(d => viendoPapelera ? d.eliminado : !d.eliminado);
+
+            if (filtroDuenoActual !== 'TODAS') {
+                listaFiltrada = listaFiltrada.filter(d => d.dueno === filtroDuenoActual);
+            }
 
             if (listaFiltrada.length === 0) {
                 cont.innerHTML = viendoPapelera 
                     ? '<p class="text-gray-400 text-xs text-center py-6">La papelera está vacía.</p>'
-                    : '<p class="text-gray-400 text-xs text-center py-6">No hay registros activos en el historial.</p>';
+                    : '<p class="text-gray-400 text-xs text-center py-6">No hay registros con este filtro.</p>';
                 return;
             }
 
@@ -512,9 +619,7 @@
                     info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
                 }
 
-                if (viendoPapelera) {
-                    bgCard = 'bg-red-50 border-red-200';
-                }
+                if (viendoPapelera) bgCard = 'bg-red-50 border-red-200';
 
                 cont.innerHTML += `
                 <div class="border p-2.5 rounded-lg flex justify-between items-center ${bgCard} text-xs shadow-sm cursor-pointer hover:shadow-md transition">
@@ -529,12 +634,59 @@
                             ? `<button onclick="restaurar(${d.id})" title="Restaurar a activo" class="bg-emerald-600 text-white font-bold px-2 py-1 rounded hover:bg-emerald-700">↩️ Restaurar</button>`
                             : `
                                 ${esFiadoCobrado ? `<button onclick="deshacerCobro(${d.id})" title="Volver a poner pendiente" class="bg-amber-500 text-white font-bold px-2 py-1 rounded hover:bg-amber-600">↩️ Reabrir</button>` : ''}
+                                <button onclick="abrirEditar(${d.id})" title="Editar registro" class="bg-blue-600 text-white font-bold px-2 py-1 rounded hover:bg-blue-700">✏️</button>
                                 <button onclick="eliminar(${d.id})" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded hover:bg-red-700">🗑️</button>
                               `
                         }
                     </div>
                 </div>`;
             });
+        }
+
+        function abrirEditar(id) {
+            const item = datosCompletosGlobales.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-dueno').value = item.dueno;
+            document.getElementById('edit-monto').value = item.monto;
+
+            if (item.tipo === 'Ingreso') {
+                document.getElementById('edit-label-detalle').innerText = 'Nombre del Cliente:';
+                document.getElementById('edit-detalle').value = item.cliente || '';
+                document.getElementById('edit-box-desc').classList.remove('hidden');
+                document.getElementById('edit-desc').value = item.descripcion || '';
+            } else {
+                document.getElementById('edit-label-detalle').innerText = 'Motivo del Gasto:';
+                document.getElementById('edit-detalle').value = item.motivo || '';
+                document.getElementById('edit-box-desc').classList.add('hidden');
+            }
+
+            document.getElementById('modal-editar').classList.remove('hidden');
+        }
+
+        function cerrarEditar() {
+            document.getElementById('modal-editar').classList.add('hidden');
+        }
+
+        async function guardarEdicion() {
+            const id = parseInt(document.getElementById('edit-id').value);
+            const dueno = document.getElementById('edit-dueno').value;
+            const monto = parseFloat(document.getElementById('edit-monto').value);
+            const detalle = document.getElementById('edit-detalle').value;
+            const desc = document.getElementById('edit-desc').value;
+
+            if (!monto || monto <= 0) return alert('Ingresa un monto válido');
+
+            await fetchSinCache('/api/editar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id, dueno, monto, detalle, descripcion: desc })
+            });
+
+            alert('✅ Registro editado correctamente');
+            cerrarEditar();
+            cargarHistorial();
         }
 
         function verDetalle(id) {
@@ -573,16 +725,23 @@
             let botonesAccion = '';
             if (item.eliminado) {
                 botonesAccion = `
-                    <button onclick="restaurar(${item.id})" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700 mb-2">
+                    <button onclick="restaurar(${item.id})" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700">
                         ↩️ Restaurar este registro al Historial Activo
                     </button>
                 `;
-            } else if (item.tipo === 'Ingreso' && item.metodo === 'Fiado' && item.cobrado) {
+            } else {
                 botonesAccion = `
-                    <button onclick="deshacerCobro(${item.id})" class="w-full bg-amber-500 text-white font-bold py-2 rounded-xl text-xs hover:bg-amber-600 mb-2">
-                        ↩️ Desmarcar cobro (Volver a poner pendiente)
+                    <button onclick="cerrarDetalle(); abrirEditar(${item.id});" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-blue-700">
+                        ✏️ Editar este registro
                     </button>
                 `;
+                if (item.tipo === 'Ingreso' && item.metodo === 'Fiado' && item.cobrado) {
+                    botonesAccion += `
+                        <button onclick="deshacerCobro(${item.id})" class="w-full bg-amber-500 text-white font-bold py-2 rounded-xl text-xs hover:bg-amber-600">
+                            ↩️ Desmarcar cobro (Volver a poner pendiente)
+                        </button>
+                    `;
+                }
             }
             document.getElementById('acciones-detalle').innerHTML = botonesAccion;
             document.getElementById('modal-detalle').classList.remove('hidden');
@@ -653,6 +812,8 @@
             let netosGlobales = {};
             let netosYape = {};
 
+            let wa = `📊 *RESUMEN DE CAJA (${desde} al ${hasta})*\n\n`;
+
             ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
                 const b = balance[nom];
                 const totalIngresos = b.yape + b.efectivo;
@@ -682,34 +843,37 @@
                     <div class="font-bold ${colorTotal} text-xs">👉 GANANCIA NETA TOTAL: S/. ${signTotal}${netoTotal.toFixed(2)}</div>
                     <div class="text-[11px] text-gray-500">⏳ Fiados por cobrar: S/. ${b.fiado_p.toFixed(2)}</div>
                 </div>`;
+
+                wa += `👤 *${nom}*\n`;
+                wa += `• Total Yape: S/. ${b.yape.toFixed(2)}\n`;
+                wa += `• Total Efectivo: S/. ${b.efectivo.toFixed(2)}\n`;
+                wa += `• Gastos: S/. ${b.gastos.toFixed(2)}\n`;
+                wa += `👉 *Neto Yape:* S/. ${signYape}${netoYapeSolo.toFixed(2)}\n`;
+                wa += `👉 *Ganancia Neta:* S/. ${signTotal}${netoTotal.toFixed(2)}\n\n`;
             });
 
-            html += `<div class="font-bold pt-2 text-slate-800 text-xs">💰 RESUMEN FINAL POR DUEÑA:</div>`;
-            
-            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
-                const nY = netosYape[nom];
-                const colorY = nY >= 0 ? 'text-purple-700' : 'text-red-600';
-                const signY = nY >= 0 ? '+' : '';
-
-                const nT = netosGlobales[nom];
-                const colorT = nT >= 0 ? 'text-green-600' : 'text-red-600';
-                const signT = nT >= 0 ? '+' : '';
-
-                html += `
-                <div class="text-xs py-1 border-b border-gray-100">
-                    <span class="font-bold">👤 ${nom}:</span>
-                    <span class="font-bold ${colorY}">📱 Neto Yape: S/. ${signY}${nY.toFixed(2)}</span> | 
-                    <span class="${colorT}">Total: S/. ${signT}${nT.toFixed(2)}</span>
-                </div>`;
-            });
-
+            textoWhatsAppGlobal = wa;
             document.getElementById('resultado-reporte').innerHTML = html;
+        }
+
+        function copiarWhatsApp() {
+            if (!textoWhatsAppGlobal) {
+                alert('Primero haz clic en Calcular para armar el reporte.');
+                return;
+            }
+            navigator.clipboard.writeText(textoWhatsAppGlobal).then(() => {
+                alert('📋 Resumen copiado al portapapeles. ¡Listo para pegar en WhatsApp!');
+            });
         }
 
         function descargarExcel() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
             window.location.href = `/api/exportar_csv?desde=${desde}&hasta=${hasta}&_t=${Date.now()}`;
+        }
+
+        function descargarBackup() {
+            window.location.href = `/api/backup_json?_t=${Date.now()}`;
         }
     </script>
 </body>
