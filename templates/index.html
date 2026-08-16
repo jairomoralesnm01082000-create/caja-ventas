@@ -18,8 +18,8 @@
             <div class="text-3xl">🔒</div>
             <h2 class="text-lg font-bold text-slate-800">Acceso Seguro</h2>
             <p class="text-xs text-gray-500">Ingresa el PIN de 4 dígitos para ingresar a la caja</p>
-            <input type="password" id="input-pin" maxlength="4" placeholder="••••" class="w-full p-3 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-xl focus:border-green-600 focus:outline-none">
-            <button onclick="validarPin()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-95 transition">Ingresar</button>
+            <input type="password" id="input-pin" maxlength="4" placeholder="••••" class="w-full p-3 text-center text-2xl font-bold tracking-widest border border-gray-300 rounded-xl focus:border-green-600 focus:outline-none" onkeyup="if(event.key==='Enter') validarPin()">
+            <button id="btn-validar-pin" onclick="validarPin()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-95 transition">Ingresar</button>
             <p id="error-pin" class="text-xs text-red-600 font-bold hidden">PIN incorrecto. Intenta de nuevo.</p>
         </div>
     </div>
@@ -302,7 +302,6 @@
         }
         setFechaHoy();
 
-        // Botones de monto rápido (+1, +2, +5, etc.)
         function sumarMontoRapido(tipo, valor) {
             const input = document.getElementById(`monto-${tipo}`);
             let actual = parseFloat(input.value) || 0;
@@ -310,7 +309,7 @@
         }
 
         function limpiarMontoRapido(tipo) {
-            document.getElementById(`monto-${tipo}` biographical).value = '';
+            document.getElementById(`monto-${tipo}`).value = '';
         }
 
         async function fetchSinCache(url, opciones = {}) {
@@ -333,7 +332,6 @@
         });
         window.addEventListener('focus', () => forzarSincronizacion());
 
-        // Polling rápido cada 1.5s para actualización en vivo entre móviles y laptop
         setInterval(() => {
             if (tabActual === 'historial') cargarHistorialSilencioso();
             if (tabActual === 'fiados') cargarFiadosSilencioso();
@@ -414,7 +412,6 @@
             document.getElementById('campos-fiado').classList.toggle('hidden', m !== 'Fiado');
         }
 
-        // GUARDAR VENTA CON PROTECCIÓN DE DOBLE CLIC
         async function guardarVenta() {
             const btn = document.getElementById('btn-guardar-venta');
             const monto = parseFloat(document.getElementById('monto-v').value);
@@ -454,7 +451,6 @@
             setFechaHoy();
         }
 
-        // GUARDAR GASTO CON PROTECCIÓN DE DOBLE CLIC
         async function guardarGasto() {
             const btn = document.getElementById('btn-guardar-gasto');
             const monto = parseFloat(document.getElementById('monto-g').value);
@@ -777,7 +773,6 @@
                     if (item.cobrado && item.metodo_cobro) html += `<div><b>Cobrado mediante:</b> ${item.metodo_cobro}</div>`;
                     if (item.fecha_cobro) html += `<div><b>Fecha de cobro:</b> ${item.fecha_cobro}</div>`;
                     
-                    // Mostrar historial de abonos
                     if (item.abonos && item.abonos.length > 0) {
                         html += `<div class="pt-2 border-t mt-2"><b class="text-indigo-700">Historial de Abonos:</b><ul class="list-disc pl-4 text-[11px] text-gray-600 mt-1">`;
                         item.abonos.forEach(ab => {
