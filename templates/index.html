@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS -->
+    <!-- MODAL DE DETALLE DE TRANSACCIÓN CON HISTORIAL DE ABONOS Y HORAS -->
     <div id="modal-detalle" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white p-5 rounded-2xl shadow-2xl max-w-sm w-full space-y-3">
             <div class="flex justify-between items-center border-b pb-2">
@@ -147,21 +147,15 @@
                 </button>
             </div>
 
-            <div id="campos-yape" class="space-y-3">
+            <!-- CAMPOS COMUNES DE CLIENTE Y PRODUCTO -->
+            <div class="space-y-3">
+                <div>
+                    <label id="lbl-cliente-v" class="block font-bold text-sm mb-1">Nombre del Cliente (Opcional):</label>
+                    <input type="text" id="cliente-v" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                </div>
                 <div>
                     <label class="block font-bold text-sm mb-1">Descripción / Producto (Opcional):</label>
-                    <input type="text" id="desc-yape" placeholder="Ej: Gaseosa 1.5L, Pan, etc." class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                </div>
-            </div>
-
-            <div id="campos-fiado" class="space-y-3 hidden">
-                <div>
-                    <label class="block font-bold text-sm mb-1">Nombre del Cliente:</label>
-                    <input type="text" id="cliente-fiado" placeholder="Ej: Doña Carmen, Juan Pérez" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                </div>
-                <div>
-                    <label class="block font-bold text-sm mb-1">Descripción del Fiado:</label>
-                    <input type="text" id="desc-fiado" placeholder="¿Qué producto llevó?" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                    <input type="text" id="desc-v" placeholder="Ej: Gaseosa 1.5L, Pan, Shampoo" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                 </div>
             </div>
 
@@ -288,7 +282,6 @@
             if (navigator.vibrate) navigator.vibrate(50);
         }
 
-        // FECHA LOCAL EXACTA DEL DISPOSITIVO
         function obtenerFechaLocalTexto() {
             const fechaLocal = new Date();
             const año = fechaLocal.getFullYear();
@@ -297,15 +290,13 @@
             return `${año}-${mes}-${dia}`;
         }
 
-        function obtenerFechaHoraLocalTexto() {
-            const fechaLocal = new Date();
-            const año = fechaLocal.getFullYear();
-            const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
-            const dia = String(fechaLocal.getDate()).padStart(2, '0');
-            const horas = String(fechaLocal.getHours()).padStart(2, '0');
-            const minutos = String(fechaLocal.getMinutes()).padStart(2, '0');
-            const segundos = String(fechaLocal.getSeconds()).padStart(2, '0');
-            return `${año}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+        function obtenerFechaHoraLocalTexto(fechaSeleccionada) {
+            const ahora = new Date();
+            const horas = String(ahora.getHours()).padStart(2, '0');
+            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+            const segundos = String(ahora.getSeconds()).padStart(2, '0');
+            const f = fechaSeleccionada || obtenerFechaLocalTexto();
+            return `${f} ${horas}:${minutos}:${segundos}`;
         }
 
         function setFechaHoy() {
@@ -423,8 +414,12 @@
             document.getElementById('btn-metodo-yape').className = (m === 'Yape') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
             document.getElementById('btn-metodo-fiado').className = (m === 'Fiado') ? 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 selected-border' : 'p-3 border-2 rounded-lg font-bold flex items-center justify-center space-x-2 border-gray-300';
             
-            document.getElementById('campos-yape').classList.toggle('hidden', m !== 'Yape');
-            document.getElementById('campos-fiado').classList.toggle('hidden', m !== 'Fiado');
+            const lbl = document.getElementById('lbl-cliente-v');
+            if (m === 'Fiado') {
+                lbl.innerText = 'Nombre del Cliente (Para la deuda):';
+            } else {
+                lbl.innerText = 'Nombre del Cliente (Opcional):';
+            }
         }
 
         async function guardarVenta() {
@@ -435,18 +430,17 @@
             btn.disabled = true;
             btn.innerText = '⏳ Guardando...';
 
-            const descripcionFinal = (metodoV === 'Yape') 
-                ? document.getElementById('desc-yape').value 
-                : document.getElementById('desc-fiado').value;
+            const fechaSeleccionada = document.getElementById('fecha-v').value;
+            const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
 
             const payload = {
                 tipo: 'Ingreso',
                 dueno: duenoV,
                 monto: monto,
                 metodo: metodoV,
-                cliente: (metodoV === 'Fiado') ? document.getElementById('cliente-fiado').value : '',
-                descripcion: descripcionFinal,
-                fecha: document.getElementById('fecha-v').value
+                cliente: document.getElementById('cliente-v').value,
+                descripcion: document.getElementById('desc-v').value,
+                fecha_hora: fechaHoraCompleta
             };
 
             await fetchSinCache('/api/registrar', { 
@@ -458,9 +452,8 @@
             vibrarConfirmacion();
             alert('✅ Registro guardado correctamente');
             document.getElementById('monto-v').value = '';
-            document.getElementById('desc-yape').value = '';
-            document.getElementById('cliente-fiado').value = '';
-            document.getElementById('desc-fiado').value = '';
+            document.getElementById('cliente-v').value = '';
+            document.getElementById('desc-v').value = '';
             btn.disabled = false;
             btn.innerText = '💾 Guardar Venta / Fiado';
             setFechaHoy();
@@ -476,12 +469,15 @@
             btn.disabled = true;
             btn.innerText = '⏳ Guardando...';
 
+            const fechaSeleccionada = document.getElementById('fecha-g').value;
+            const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
+
             const payload = {
                 tipo: 'Gasto',
                 dueno: duenoG,
                 monto: monto,
                 motivo: motivo,
-                fecha: document.getElementById('fecha-g').value
+                fecha_hora: fechaHoraCompleta
             };
 
             await fetchSinCache('/api/registrar', { 
@@ -528,13 +524,14 @@
             }
 
             filtrados.forEach(f => {
+                const horaLegible = (f.fecha && f.fecha.length >= 16) ? f.fecha.slice(0, 16) : f.fecha;
                 cont.innerHTML += `
                 <div class="border p-3 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center bg-white shadow-sm gap-2">
                     <div>
                         <div class="font-bold text-sm">👤 ${f.dueno} - <span class="text-red-700">S/. ${f.monto.toFixed(2)}</span></div>
                         <div class="text-xs font-semibold text-indigo-700">Cliente: ${f.cliente || 'Sin nombre'}</div>
                         <div class="text-xs text-gray-600">${f.descripcion || ''}</div>
-                        <div class="text-xs text-gray-400">${f.fecha.slice(0, 10)}</div>
+                        <div class="text-xs text-gray-400">🕒 ${horaLegible}</div>
                     </div>
                     <div class="flex flex-wrap gap-1">
                         <button onclick="abrirAbono(${f.id}, '${f.cliente || 'Sin nombre'}', ${f.monto})" class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded shadow hover:bg-amber-600">Abonar</button>
@@ -569,7 +566,6 @@
                 id: fiadoAbonoSeleccionado,
                 monto_abono: montoAbono,
                 metodo_cobro: metodoCobro,
-                fecha: obtenerFechaLocalTexto(),
                 fecha_hora: obtenerFechaHoraLocalTexto()
             };
 
@@ -607,7 +603,7 @@
             await fetchSinCache('/api/cobrar_fiado', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ id: id, metodo_cobro: metodoCobro }) 
+                body: JSON.stringify({ id: id, metodo_cobro: metodoCobro, fecha_hora: obtenerFechaHoraLocalTexto() }) 
             });
             vibrarConfirmacion();
             alert(`✅ Fiado cobrado en ${metodoCobro}`);
@@ -694,6 +690,9 @@
                 let info = '';
                 let esFiadoCobrado = false;
 
+                // Formatear fecha y hora para la vista
+                const fechaHoraLegible = (d.fecha && d.fecha.length >= 16) ? d.fecha.slice(0, 16) : d.fecha;
+
                 if (d.tipo === 'Ingreso') {
                     if (d.metodo === 'Yape') {
                         badge = '<span class="text-purple-700 font-bold">[Yape]</span>';
@@ -710,10 +709,10 @@
                     } else if (d.metodo === 'Efectivo') {
                         badge = '<span class="text-green-700 font-bold">[Efectivo]</span>';
                     }
-                    info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
+                    info = `[${fechaHoraLegible}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
                 } else {
                     badge = '<span class="text-orange-700 font-bold">[Gasto 💸]</span>';
-                    info = `[${d.fecha.slice(0, 10)}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
+                    info = `[${fechaHoraLegible}] 👤 ${d.dueno} | ${badge} S/. ${d.monto.toFixed(2)}`;
                 }
 
                 if (viendoPapelera) bgCard = 'bg-red-50 border-red-200';
@@ -799,7 +798,7 @@
             let html = `
                 <div class="bg-gray-50 p-2.5 rounded border space-y-1">
                     <div><b>ID de Registro:</b> #${item.id}</div>
-                    <div><b>Fecha:</b> ${item.fecha.slice(0, 10)}</div>
+                    <div><b>Fecha y Hora:</b> ${item.fecha || ''}</div>
                     <div><b>Dueña:</b> 👤 ${item.dueno}</div>
                     <div><b>Tipo:</b> ${item.tipo}</div>
                     <div><b>Monto:</b> <span class="text-sm font-bold text-green-700">S/. ${item.monto.toFixed(2)}</span></div>
@@ -812,15 +811,14 @@
                 if (item.metodo === 'Fiado') {
                     html += `<div><b>Estado:</b> ${item.cobrado ? '✅ Cobrado' : '⏳ Pendiente de cobro'}</div>`;
                     if (item.cobrado && item.metodo_cobro) html += `<div><b>Cobrado mediante:</b> ${item.metodo_cobro}</div>`;
-                    if (item.fecha_cobro) html += `<div><b>Fecha de cobro:</b> ${item.fecha_cobro}</div>`;
+                    if (item.fecha_cobro) html += `<div><b>Fecha y hora de cobro:</b> ${item.fecha_cobro}</div>`;
                     
-                    // Lista interactiva de abonos con botón para anular
                     if (item.abonos && item.abonos.length > 0) {
                         html += `<div class="pt-2 border-t mt-2"><b class="text-indigo-700">Historial de Abonos:</b><div class="space-y-1 mt-1">`;
                         item.abonos.forEach(ab => {
                             html += `
                             <div class="flex justify-between items-center bg-white p-1.5 rounded border text-[11px]">
-                                <span>• S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha.slice(0, 16)}</span>
+                                <span>• S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha}</span>
                                 ${ab.abono_id ? `<button onclick="eliminarAbonoEspecifico(${item.id}, ${ab.abono_id})" class="text-red-600 hover:text-red-800 font-bold text-xs px-1.5 py-0.5 bg-red-50 rounded" title="Anular este abono">🗑️ Anular</button>` : ''}
                             </div>`;
                         });
@@ -926,11 +924,11 @@
                 }
             });
 
-            let html = `<div class="font-bold border-b pb-2 text-slate-800">📊 BALANCE DEL ${desde} AL ${hasta}</div>`;
             let netosGlobales = {};
             let netosYape = {};
-
-            let wa = `📊 *RESUMEN DE CAJA (${desde} al ${hasta})*\n\n`;
+            let granTotalYapeGeneral = 0;
+            let granTotalEfectivoGeneral = 0;
+            let granTotalGastosGeneral = 0;
 
             ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
                 const b = balance[nom];
@@ -940,6 +938,33 @@
 
                 netosGlobales[nom] = netoTotal;
                 netosYape[nom] = netoYapeSolo;
+
+                granTotalYapeGeneral += netoYapeSolo;
+                granTotalEfectivoGeneral += b.efectivo;
+                granTotalGastosGeneral += b.gastos;
+            });
+
+            const colorYapeGeneral = granTotalYapeGeneral >= 0 ? 'text-purple-800' : 'text-red-600';
+            const signYapeGeneral = granTotalYapeGeneral >= 0 ? '+' : '';
+
+            let html = `
+                <div class="font-bold border-b pb-2 text-slate-800">📊 BALANCE DEL ${desde} AL ${hasta}</div>
+                
+                <div class="bg-purple-100 border-2 border-purple-400 p-3 rounded-xl shadow-sm text-center my-2">
+                    <div class="text-[11px] font-bold text-purple-900 uppercase tracking-wide">🏦 Total General en Cuenta Yape (A tener en la app):</div>
+                    <div class="text-xl font-extrabold ${colorYapeGeneral}">S/. ${signYapeGeneral}${granTotalYapeGeneral.toFixed(2)}</div>
+                    <div class="text-[10px] text-purple-700 font-semibold">(Suma de saldos de BERTHA, KARLA y CARLITA ya descontando gastos)</div>
+                </div>
+            `;
+
+            let wa = `📊 *RESUMEN DE CAJA (${desde} al ${hasta})*\n`;
+            wa += `🏦 *TOTAL A TENER EN YAPE:* S/. ${signYapeGeneral}${granTotalYapeGeneral.toFixed(2)}\n`;
+            wa += `------------------------------------\n\n`;
+
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const b = balance[nom];
+                const netoTotal = netosGlobales[nom];
+                const netoYapeSolo = netosYape[nom];
 
                 const colorTotal = netoTotal >= 0 ? 'text-green-600' : 'text-red-600';
                 const signTotal = netoTotal >= 0 ? '+' : '';
@@ -968,6 +993,25 @@
                 wa += `• Gastos: S/. ${b.gastos.toFixed(2)}\n`;
                 wa += `👉 *Neto Yape:* S/. ${signYape}${netoYapeSolo.toFixed(2)}\n`;
                 wa += `👉 *Ganancia Neta:* S/. ${signTotal}${netoTotal.toFixed(2)}\n\n`;
+            });
+
+            html += `<div class="font-bold pt-2 text-slate-800 text-xs">💰 RESUMEN FINAL POR DUEÑA:</div>`;
+            
+            ['BERTHA', 'KARLA', 'CARLITA'].forEach(nom => {
+                const nY = netosYape[nom];
+                const colorY = nY >= 0 ? 'text-purple-700' : 'text-red-600';
+                const signY = nY >= 0 ? '+' : '';
+
+                const nT = netosGlobales[nom];
+                const colorT = nT >= 0 ? 'text-green-600' : 'text-red-600';
+                const signT = nT >= 0 ? '+' : '';
+
+                html += `
+                <div class="text-xs py-1 border-b border-gray-100">
+                    <span class="font-bold">👤 ${nom}:</span>
+                    <span class="font-bold ${colorY}">📱 Neto Yape: S/. ${signY}${nY.toFixed(2)}</span> | 
+                    <span class="${colorT}">Total: S/. ${signT}${nT.toFixed(2)}</span>
+                </div>`;
             });
 
             textoWhatsAppGlobal = wa;
