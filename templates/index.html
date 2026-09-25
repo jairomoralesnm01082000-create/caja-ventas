@@ -629,7 +629,6 @@
             const btn = document.getElementById('btn-guardar-venta');
             const fechaSeleccionada = document.getElementById('fecha-v').value;
             const fechaHoraCompleta = obtenerFechaHoraLocalTexto(fechaSeleccionada);
-            // Captura en mayúsculas
             const clienteVal = (document.getElementById('cliente-v').value || '').trim().toUpperCase();
 
             if (duenoV === 'COMPARTIDO') {
@@ -944,7 +943,6 @@
             renderizarHistorial();
         }
 
-        // RENDERIZADO DEL HISTORIAL CON TODO EN MAYÚSCULAS
         function renderizarHistorial() {
             const cont = document.getElementById('lista-historial');
             const textoBusqueda = (document.getElementById('buscar-historial').value || '').toUpperCase().trim();
@@ -973,7 +971,7 @@
 
             if (listaFiltrada.length === 0) {
                 cont.innerHTML = viendoPapelera 
-                    ? '<p class="text-gray-400 text-xs text-center py-6">La papelera está vacía.</p>'
+                    ? '<p class="text-gray-400 text-xs text-center py-6">La papelera está vacía.</p>' 
                     : '<p class="text-gray-400 text-xs text-center py-6">No se encontraron registros con este filtro.</p>';
                 return;
             }
@@ -1010,7 +1008,6 @@
 
                 if (viendoPapelera) bgCard = 'bg-red-50 border-red-200';
 
-                // Renderizado forzado a mayúsculas
                 const clienteTexto = d.cliente ? d.cliente.toUpperCase() : '';
                 const descTexto = d.descripcion ? d.descripcion.toUpperCase() : '';
                 const motivoTexto = d.motivo ? d.motivo.toUpperCase() : '';
@@ -1025,7 +1022,7 @@
                     </div>
                     <div class="flex items-center space-x-1">
                         ${viendoPapelera 
-                            ? `<button onclick="restaurar(${d.id})" title="Restaurar a activo" class="bg-emerald-600 text-white font-bold px-2 py-1 rounded hover:bg-emerald-700">↩️ Restaurar</button>`
+                            ? `<button onclick="restaurar(${d.id})" title="Restaurar a activo" class="bg-emerald-600 text-white font-bold px-2 py-1 rounded hover:bg-emerald-700">↩️ Restaurar</button>` 
                             : `
                                 ${esFiadoCobrado ? `<button onclick="deshacerCobro(${d.id})" title="Volver a poner pendiente" class="bg-amber-500 text-white font-bold px-2 py-1 rounded hover:bg-amber-600">↩️ Reabrir</button>` : ''}
                                 <button onclick="abrirEditar(${d.id})" title="Editar registro" class="bg-blue-600 text-white font-bold px-2 py-1 rounded hover:bg-blue-700">✏️</button>
@@ -1117,7 +1114,7 @@
                             html += `
                             <div class="flex justify-between items-center bg-white p-1.5 rounded border text-[11px]">
                                 <span>• S/. ${ab.monto.toFixed(2)} (${ab.metodo}) - ${ab.fecha}</span>
-                                ${ab.abono_id ? `<button onclick="eliminarAbonoEspecifico(${item.id}, ${ab.abono_id})" class="text-red-600 hover:text-red-800 font-bold text-xs px-1.5 py-0.5 bg-red-50 rounded" title="Anular este abono">🗑️ Anular</button>` : ''}
+                                ${ab.abono_id ? `<button onclick="eliminarAbonoEspecifico(${item.id},${ab.abono_id})" class="text-red-600 hover:text-red-800 font-bold text-xs px-1.5 py-0.5 bg-red-50 rounded" title="Anular este abono">🗑️ Anular</button>` : ''}
                             </div>`;
                         });
                         html += `</div></div>`;
@@ -1185,6 +1182,9 @@
             cargarHistorial();
         }
 
+        // ==========================================
+        // CÁLCULO DE REPORTES ACTUALIZADO Y CORREGIDO
+        // ==========================================
         async function calcularGanancias() {
             const desde = document.getElementById('rep-desde').value;
             const hasta = document.getElementById('rep-hasta').value;
@@ -1199,26 +1199,65 @@
 
             datos.forEach(d => {
                 if (d.eliminado) return;
-                const f = d.fecha.slice(0, 10);
-                if(f >= desde && f <= hasta) {
-                    if(d.tipo === 'Ingreso') {
-                        if(d.metodo === 'Yape') {
-                            balance[d.dueno].yape += d.monto;
-                        } else if(d.metodo === 'Fiado') {
-                            if(d.cobrado) {
-                                if(d.metodo_cobro === 'Efectivo') {
-                                    balance[d.dueno].efectivo += d.monto;
-                                } else {
-                                    balance[d.dueno].yape += d.monto;
-                                }
-                            } else {
-                                balance[d.dueno].fiado_p += d.monto;
-                            }
-                        } else if(d.metodo === 'Efectivo') {
-                            balance[d.dueno].efectivo += d.monto;
+                if (!balance[d.dueno]) return;
+
+                const fechaOrigen = (d.fecha || '').slice(0, 10);
+
+                // 1. GASTOS: se evalúan según la fecha en que se realizaron
+                if (d.tipo === 'Gasto') {
+                    if (fechaOrigen >= desde && fechaOrigen <= hasta) {
+                        balance[d.dueno].gastos += Number(d.monto) || 0;
+                    }
+                    return;
+                }
+
+                // 2. INGRESOS DIRECTOS (Ventas al contado en Yape o Efectivo)
+                if (d.tipo === 'Ingreso' && (d.metodo === 'Yape' || d.metodo === 'Efectivo')) {
+                    if (fechaOrigen >= desde && fechaOrigen <= hasta) {
+                        if (d.metodo === 'Yape') {
+                            balance[d.dueno].yape += Number(d.monto) || 0;
+                        } else {
+                            balance[d.dueno].efectivo += Number(d.monto) || 0;
                         }
-                    } else if(d.tipo === 'Gasto') {
-                        balance[d.dueno].gastos += d.monto;
+                    }
+                    return;
+                }
+
+                // 3. FIADOS: se evalúan según el día en que se recibió el dinero
+                if (d.tipo === 'Ingreso' && d.metodo === 'Fiado') {
+                    // Sumar abonos parciales en la fecha exacta en que se pagaron
+                    if (d.abonos && Array.isArray(d.abonos) && d.abonos.length > 0) {
+                        d.abonos.forEach(ab => {
+                            const fAbono = (ab.fecha || '').slice(0, 10);
+                            if (fAbono >= desde && fAbono <= hasta) {
+                                const montAbono = Number(ab.monto) || 0;
+                                if (ab.metodo === 'Efectivo') {
+                                    balance[d.dueno].efectivo += montAbono;
+                                } else {
+                                    balance[d.dueno].yape += montAbono;
+                                }
+                            }
+                        });
+                    }
+
+                    // Sumar cobro total o liquidación en la fecha en que se cobró
+                    if (d.cobrado) {
+                        const fCobro = (d.fecha_cobro || d.fecha || '').slice(0, 10);
+                        if (fCobro >= desde && fCobro <= hasta) {
+                            const montoLiquidado = Number(d.monto) || 0;
+                            const canalCobro = d.metodo_cobro || 'Yape';
+
+                            if (canalCobro === 'Efectivo') {
+                                balance[d.dueno].efectivo += montoLiquidado;
+                            } else {
+                                balance[d.dueno].yape += montoLiquidado;
+                            }
+                        }
+                    } else {
+                        // Fiado pendiente: se muestra como deuda por cobrar si se originó en el rango
+                        if (fechaOrigen >= desde && fechaOrigen <= hasta) {
+                            balance[d.dueno].fiado_p += Number(d.monto) || 0;
+                        }
                     }
                 }
             });
