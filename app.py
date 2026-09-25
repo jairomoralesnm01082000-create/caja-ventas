@@ -415,72 +415,124 @@ def exportar_csv():
 
     datos = cargar_datos()
     salida = io.StringIO()
+    # Escribir BOM UTF-8 para que Excel reconozca tildes y caracteres en español
     salida.write("\ufeff")
 
     escritor = csv.writer(salida, delimiter=";")
     escritor.writerow(
         [
             "ID",
-            "Fecha y Hora",
+            "Fecha Registro",
+            "Fecha Cobro / Flujo",
             "Dueña",
             "Tipo",
             "Monto (S/.)",
-            "Método Inicial",
+            "Método Pago / Cobro",
             "Cliente / Motivo",
             "Descripción",
-            "Estado Cobro",
-            "Método de Cobro",
+            "Estado",
         ]
     )
 
-    for d in datos:
-        if d.get("eliminado", False):
+    for item in datos:
+        if item.get("eliminado", False):
             continue
 
-        f = d.get("fecha", "")[:10]
-        if desde <= f <= hasta:
-            tipo = d.get("tipo", "")
-            dueno = d.get("dueno", "")
-            monto = f"{d.get('monto', 0):.2f}"
-            metodo = d.get("metodo", "-")
-            detalle = (
-                (d.get("cliente", "") or "").upper()
-                if tipo == "Ingreso"
-                else (d.get("motivo", "") or "").upper()
-            )
-            desc = (d.get("descripcion", "-") or "-").upper()
-            estado = (
-                "Cobrado"
-                if d.get("cobrado", True)
-                else "Pendiente de Pago (Fiado)"
-            )
-            metodo_cobro = d.get("metodo_cobro", "-")
+        fecha_origen = (item.get("fecha") or "")[:10]
+        tipo = item.get("tipo", "")
+        metodo = item.get("metodo", "")
+        dueno = item.get("dueno", "")
+        cliente_o_motivo = item.get("cliente") or item.get("motivo") or ""
+        descripcion = item.get("descripcion", "")
+        monto = item.get("monto", 0.0)
 
-            escritor.writerow(
-                [
-                    d.get("id"),
-                    d.get("fecha", ""),
-                    dueno,
-                    tipo,
-                    monto,
-                    metodo,
-                    detalle,
-                    desc,
-                    estado,
-                    metodo_cobro,
-                ]
-            )
+        # 1. Gastos y Ventas al contado (Yape / Efectivo)
+        if tipo == "Gasto" or (tipo == "Ingreso" and metodo in ["Yape", "Efectivo"]):
+            if desde <= fecha_origen <= hasta:
+                escritor.writerow(
+                    [
+                        item.get("id"),
+                        item.get("fecha", ""),
+                        item.get("fecha", ""),
+                        dueno,
+                        tipo,
+                        f"{monto:.2f}",
+                        metodo,
+                        cliente_o_motivo,
+                        descripcion,
+                        "Registrado",
+                    ]
+                )
+
+        # 2. Fiados y liquidaciones
+        elif tipo == "Ingreso" and metodo == "Fiado":
+            # Procesar abonos parciales individuales si existen
+            abonos = item.get("abonos", [])
+            if isinstance(abonos, list) and len(abonos) > 0:
+                for ab in abonos:
+                    f_abono = (ab.get("fecha") or "")[:10]
+                    if desde <= f_abono <= hasta:
+                        escritor.writerow(
+                            [
+                                f"{item.get('id')}-ABONO",
+                                item.get("fecha", ""),
+                                ab.get("fecha", ""),
+                                dueno,
+                                "Ingreso (Abono)",
+                                f"{float(ab.get('monto', 0.0)):.2f}",
+                                ab.get("metodo", "Yape"),
+                                cliente_o_motivo,
+                                f"Abono a deuda - {descripcion}".strip(" -"),
+                                "Abonado",
+                            ]
+                        )
+
+            # Procesar cobro total o saldo liquidado
+            if item.get("cobrado"):
+                f_cobro = (item.get("fecha_cobro") or item.get("fecha") or "")[:10]
+                if desde <= f_cobro <= hasta:
+                    metodo_cobro = item.get("metodo_cobro", "Yape")
+                    escritor.writerow(
+                        [
+                            item.get("id"),
+                            item.get("fecha", ""),
+                            item.get("fecha_cobro", item.get("fecha", "")),
+                            dueno,
+                            "Ingreso (Fiado Cobrado)",
+                            f"{monto:.2f}",
+                            metodo_cobro,
+                            cliente_o_motivo,
+                            descripcion,
+                            "Cobrado Total",
+                        ]
+                    )
+            else:
+                # Fiado que aún sigue pendiente
+                if desde <= fecha_origen <= hasta:
+                    escritor.writerow(
+                        [
+                            item.get("id"),
+                            item.get("fecha", ""),
+                            "-",
+                            dueno,
+                            "Fiado (Pendiente)",
+                            f"{monto:.2f}",
+                            "Por Cobrar",
+                            cliente_o_motivo,
+                            descripcion,
+                            "Pendiente",
+                        ]
+                    )
 
     salida.seek(0)
     nombre_archivo = f"reporte_caja_{desde}_al_{hasta}.csv"
     return Response(
         salida.getvalue(),
         mimetype="text/csv",
-        headers={
-            "Content-Disposition": f"attachment;filename={nombre_archivo}"
-        },
+        headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"},
     )
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    puerto = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=puerto)
